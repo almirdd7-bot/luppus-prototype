@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <!-- Firebase Analytics (projeto separado: luppus-painel-financeiro-3907b) -->
+  <!-- ATENCAO: isso estava colado 2x e ANTES do <!DOCTYPE html> no arquivo original. Deduplicado e movido para dentro do <head>. Confirmar com o colega se esse tracking e intencional. -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-analytics.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyCrupblRyFCFq4PDMdKSWjLfWdwtGbP0i4",
+      authDomain: "luppus-painel-financeiro-3907b.firebaseapp.com",
+      projectId: "luppus-painel-financeiro-3907b",
+      storageBucket: "luppus-painel-financeiro-3907b.firebasestorage.app",
+      messagingSenderId: "9069469557",
+      appId: "1:9069469557:web:6a2100e9e9b308006efd3c",
+      measurementId: "G-42FTYBCCDH"
+    };
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+  </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUPPUS | find the signal</title>
+    
+    <!-- Core Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- Jspreadsheet CE (Planilhas) -->
+    <script src="https://bossanova.uk/jspreadsheet/v4/jexcel.js"></script>
+    <link rel="stylesheet" href="https://bossanova.uk/jspreadsheet/v4/jexcel.css" type="text/css" />
+    <script src="https://jsuites.net/v4/jsuites.js"></script>
+    <link rel="stylesheet" href="https://jsuites.net/v4/jsuites.css" type="text/css" />
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#070809">
+</head>
+<body>
+
+    <a href="#main-content" class="skip-link">Pular para o conteúdo</a>
+
+    <!-- MOBILE NAV (checkbox-driven, no JS) -->
+    <input type="checkbox" id="nav-toggle" class="nav-toggle-input">
+
+    <!-- OVERLAYS -->
+    <div id="login-overlay" class="modal-overlay">
+        <div class="login-box login-box--brand">
+            <img class="login-logo" src="assets/logo-vertical.png" alt="LUPPUS — find the signal">
+            <input type="text" id="api-key-input" placeholder="FIREBASE API KEY" onkeypress="if(event.key === 'Enter') doKeyLogin()">
+            <input type="text" id="project-id-input" placeholder="FIREBASE PROJECT ID" onkeypress="if(event.key === 'Enter') doKeyLogin()">
+            <button type="button" id="btn-login-action" onclick="doKeyLogin()">Acessar Ecossistema</button>
+            <label class="client-checkbox">
+                <input type="checkbox" id="client-mode-check"> Entrar com Acesso Restrito (Modo Cliente)
+            </label>
+            <div id="login-error" class="error-msg"></div>
+        </div>
+    </div>
+
+    <div id="loading-overlay" class="modal-overlay" style="display: none;">
+        <h2 style="color: var(--champagne); letter-spacing: 2px; font-size: 14px; text-transform: uppercase;" id="loading-text">Sincronizando Dados...</h2>
+    </div>
+
+    <div id="new-company-overlay" class="modal-overlay" style="display: none;">
+        <div class="login-box">
+            <h1 style="font-size: 20px;">novo cliente</h1>
+            <p>Criar ambiente isolado</p>
+            <input type="text" id="new-company-name" placeholder="Razão Social">
+            <input type="text" id="new-company-info" placeholder="CNPJ / Informação">
+            <button onclick="saveNewCompany()">Criar</button>
+            <button class="outline-btn" style="width: 100%; margin-top: 10px;" onclick="closeNewCompanyModal()">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="wipe-overlay" class="modal-overlay" style="display: none;">
+        <div class="login-box danger-box">
+            <h1 style="color: var(--danger); font-size: 20px;">expurgo</h1>
+            <p>Destruição de Dados</p>
+            <input type="password" id="wipe-pin-input" placeholder="Senha de segurança" onkeypress="if(event.key === 'Enter') confirmWipe()">
+            <button style="background-color: var(--danger); color: #000;" onclick="confirmWipe()">Confirmar</button>
+            <button class="outline-btn" style="width: 100%; margin-top: 10px;" onclick="closeWipeModal()">Cancelar</button>
+            <div id="wipe-error" class="error-msg">Credencial inválida.</div>
+        </div>
+    </div>
+
+    <!-- CUSTOM TOAST ALERT -->
+    <div id="toast-msg"></div>
+
+    <!-- MOBILE TOP BAR -->
+    <div class="mobile-topbar hide-on-pdf">
+        <label for="nav-toggle" class="nav-toggle-btn" aria-label="Abrir menu" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); document.getElementById('nav-toggle').click();}">
+            <svg class="menu-icon" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </label>
+        <img src="assets/logo-horizontal-trimmed.png" alt="LUPPUS" class="mobile-topbar-logo">
+    </div>
+    <label for="nav-toggle" class="nav-backdrop"></label>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar hide-on-pdf" role="navigation" aria-label="Menu principal">
+        <div class="brand"><img src="assets/logo-horizontal-trimmed.png" alt="LUPPUS"></div>
+        <ul class="menu-list">
+            <li><button type="button" class="menu-item active" id="menu-painel" onclick="switchView('painel')">
+                <svg class="menu-icon" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                painel
+            </button></li>
+            <li><button type="button" class="menu-item" id="menu-lancamentos" onclick="switchView('lancamentos')">
+                <svg class="menu-icon" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                lançamentos
+            </button></li>
+            <li><button type="button" class="menu-item" id="menu-relatorios" onclick="switchView('relatorios')">
+                <svg class="menu-icon" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                auditoria (smart)
+            </button></li>
+            <li><button type="button" class="menu-item" id="menu-projecao" onclick="switchView('projecao')">
+                <svg class="menu-icon" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                forecasting
+            </button></li>
+            <hr class="menu-divider">
+            <li><button type="button" class="menu-item" id="menu-planilhas" onclick="switchView('planilhas')">
+                <svg class="menu-icon" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                workspaces
+            </button></li>
+            <li><button type="button" class="menu-item" id="menu-bi" onclick="switchView('bi')">
+                <svg class="menu-icon" aria-hidden="true"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+                data studio
+            </button></li>
+            <li><button type="button" class="menu-item" id="menu-cofre" onclick="switchView('cofre')">
+                <svg class="menu-icon" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                cofre digital
+            </button></li>
+            <hr class="menu-divider hide-client">
+            <li class="hide-client"><button type="button" class="menu-item" id="menu-config" onclick="switchView('config')">
+                <svg class="menu-icon" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                configurações
+            </button></li>
+            <li><button type="button" class="menu-item" id="menu-suporte" onclick="switchView('suporte')">
+                <svg class="menu-icon" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                suporte
+            </button></li>
+        </ul>
+        <div class="sidebar-footer">
+            <button type="button" class="logout-btn" onclick="doLogout()">
+                <svg class="menu-icon" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                sair
+            </button>
+        </div>
+    </div>
+
+    <div class="main-wrapper" id="pdf-export-area">
+        <!-- HEADER -->
+        <div class="top-header hide-on-pdf">
+            <div class="view-title">
+                <h2 id="current-view-title">visão geral</h2>
+                <div class="sync-status">
+                    <div class="sync-dot"></div> sincronizado
+                </div>
+            </div>
+            <div class="company-controls">
+                <button class="outline-btn" style="padding: 6px 12px; font-size: 10px;" onclick="generatePDF()">exportar pdf</button>
+                <select id="global-company-select" class="company-select hide-client" onchange="switchCompany(this.value)"></select>
+                <div id="client-company-label" style="display:none; color:var(--gold); font-size: 12px; font-weight:600;"></div>
+                <button class="outline-btn hide-client" style="padding: 6px 12px; font-size: 10px;" onclick="openNewCompanyModal()">+ cliente</button>
+            </div>
+        </div>
+
+        <div class="content-scroll" id="main-content" role="main">
+            
+            <!-- VIEW 1: PAINEL -->
+            <div id="view-painel" class="view-section active">
+                <div class="kpi-grid">
+                    <div class="kpi-card"><div class="kpi-title">receita</div><div class="kpi-value positive" id="total-in">R$ 0,00</div></div>
+                    <div class="kpi-card"><div class="kpi-title">custos</div><div class="kpi-value negative" id="total-out">R$ 0,00</div></div>
+                    <div class="kpi-card"><div class="kpi-title">resultado líquido</div><div class="kpi-value" id="net-cash">R$ 0,00</div></div>
+                </div>
+                <div class="dashboard-lower-grid">
+                    <div class="panel-card">
+                        <div class="panel-title">fluxo consolidado</div>
+                        <div class="chart-container"><canvas id="cashFlowChart"></canvas></div>
+                    </div>
+                    <div class="panel-card">
+                        <div class="panel-title">
+                            últimos lançamentos
+                            <button class="outline-btn hide-on-pdf" style="padding: 4px 10px; font-size: 10px;" onclick="switchView('relatorios')">ver tudo</button>
+                        </div>
+                        <ul class="recent-list" id="recent-transactions-list"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 2: LANÇAMENTOS -->
+            <div id="view-lancamentos" class="view-section">
+                <div class="dashboard-lower-grid">
+                    <div class="panel-card">
+                        <div class="panel-title">registro manual</div>
+                        <div class="form-group"><label>data</label><input type="text" id="entry-date" placeholder="DD/MM/AAAA (Deixe vazio para hoje)"></div>
+                        <div class="form-group"><label>descrição</label><input type="text" id="desc" placeholder="Ex: Pagamento Fornecedor"></div>
+                        <div class="form-row">
+                            <div class="form-group"><label>natureza</label><select id="type"><option value="in">Receita (+)</option><option value="out">Custo (-)</option></select></div>
+                            <div class="form-group"><label>valor (R$)</label><input type="number" id="amount" placeholder="0.00" step="0.01"></div>
+                        </div>
+                        <div class="form-group"><label style="color: var(--danger);">anexo obrigatório (máx 500kb)</label><input type="file" id="receipt" accept=".pdf, image/jpeg, image/png"></div>
+                        <button class="action-btn" style="width: 100%;" onclick="processTransaction()">lançar no sistema</button>
+                    </div>
+
+                    <div class="panel-card">
+                        <div class="panel-title">conciliação ofx</div>
+                        <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 20px;">Faça upload do extrato bancário para importar dados automaticamente.</p>
+                        <input type="file" id="ofx-file" accept=".ofx,.txt" style="margin-bottom: 15px;">
+                        <button class="outline-btn" style="width: 100%;" onclick="handleOFX()">ler arquivo</button>
+                        <div id="ofx-queue-container" style="display: none; margin-top: 25px;">
+                            <div class="panel-title">fila de processamento</div>
+                            <ul id="ofx-items" class="ofx-list"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: AUDITORIA SMART -->
+            <div id="view-relatorios" class="view-section">
+                <div class="panel-card hide-on-pdf" style="margin-bottom: 20px;">
+                    <div class="smart-search-box">
+                        <svg class="smart-search-icon" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input type="text" id="smart-search" class="smart-search-input" placeholder="Luppus AI: Digite 'apenas receitas' ou 'custos com infraestrutura'..." onkeyup="applySmartSearch()">
+                    </div>
+                </div>
+
+                <div class="panel-card">
+                    <div class="panel-title">livro razão completo</div>
+                    <div class="table-container">
+                        <table id="history-table">
+                            <thead><tr><th>data</th><th>descrição</th><th>natureza</th><th>valor</th><th class="hide-on-pdf">anexo</th><th class="hide-on-pdf hide-client">ação</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 4: PROJEÇÃO / FORECAST -->
+            <div id="view-projecao" class="view-section">
+                <div class="panel-card" style="margin-bottom: 20px;">
+                    <div class="panel-title">motor de previsibilidade (30 dias)</div>
+                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 20px;">Análise algorítmica baseada na média móvel do fluxo de caixa histórico.</p>
+                    <div class="kpi-grid">
+                        <div class="kpi-card"><div class="kpi-title">saldo projetado (30d)</div><div class="kpi-value" id="forecast-30">R$ 0,00</div></div>
+                        <div class="kpi-card"><div class="kpi-title">risco de caixa</div><div class="kpi-value" id="forecast-risk">Baixo</div></div>
+                    </div>
+                    <div class="chart-container" style="height: 300px;">
+                        <p id="forecast-empty-state" class="empty-state">Sem lançamentos suficientes para projetar o caixa ainda.</p>
+                        <canvas id="forecastChart" style="display: none;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 5: PLANILHAS -->
+            <div id="view-planilhas" class="view-section">
+                <div class="mobile-warning">O editor de planilhas é otimizado para uso em computadores e notebooks.</div>
+                <div class="panel-card">
+                    <div class="panel-title">
+                        workspaces
+                        <div>
+                            <button class="outline-btn" style="padding: 6px 12px;" onclick="exportSpreadsheet()">baixar csv</button>
+                            <button class="action-btn hide-client" style="padding: 6px 12px; margin-left: 5px;" onclick="saveSpreadsheet()">salvar na nuvem</button>
+                        </div>
+                    </div>
+                    <div id="spreadsheet-area"></div>
+                </div>
+            </div>
+
+            <!-- VIEW 6: DATA STUDIO / BI -->
+            <div id="view-bi" class="view-section">
+                <div class="mobile-warning">O motor de BI é melhor visualizado em telas grandes.</div>
+                <div class="dashboard-lower-grid">
+                    <div class="panel-card">
+                        <div class="panel-title">importação de dados</div>
+                        <input type="file" id="bi-csv" accept=".csv" style="margin-bottom: 15px;" onchange="handleCSVUpload()">
+                        <div id="bi-controls" style="display: none; margin-top: 20px;">
+                            <div class="form-group"><label>Eixo X (Agrupador)</label><select id="bi-x" onchange="updateBIChart()"></select></div>
+                            <div class="form-group"><label>Eixo Y (Valor)</label><select id="bi-y" onchange="updateBIChart()"></select></div>
+                            <div class="form-group"><label>Tipo de Gráfico</label>
+                                <select id="bi-type" onchange="updateBIChart()">
+                                    <option value="bar">Barras</option><option value="line">Linhas</option><option value="pie">Pizza</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-card">
+                        <div class="panel-title">canvas de análise</div>
+                        <div class="chart-container" style="height: 350px;">
+                            <p id="bi-empty-state" class="empty-state">Envie um CSV ao lado para começar a analisar seus dados.</p>
+                            <canvas id="biCanvas" style="display: none;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 7: COFRE DIGITAL -->
+            <div id="view-cofre" class="view-section">
+                <div class="dashboard-lower-grid">
+                    <div class="panel-card hide-client">
+                        <div class="panel-title">armazenar documento</div>
+                        <div class="form-group"><label>Nome do Arquivo (Ex: Contrato Social)</label><input type="text" id="vault-name"></div>
+                        <div class="form-group"><label>Arquivo (PDF/Img - Máx 500kb)</label><input type="file" id="vault-file" accept=".pdf, image/jpeg, image/png"></div>
+                        <button class="action-btn" style="width: 100%;" onclick="processVaultUpload()">salvar no cofre</button>
+                    </div>
+                    <div class="panel-card" style="grid-column: span 1;">
+                        <div class="panel-title">documentos seguros</div>
+                        <ul class="recent-list" id="vault-list"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 8: CONFIGURAÇÕES -->
+            <div id="view-config" class="view-section hide-on-pdf hide-client">
+                <div class="dashboard-lower-grid">
+                    <div class="panel-card">
+                        <div class="panel-title">gestão de clientes</div>
+                        <button class="outline-btn" onclick="openNewCompanyModal()">+ adicionar cliente</button>
+                    </div>
+                    <div class="panel-card" style="border-color: #331111;">
+                        <div class="panel-title" style="color: var(--danger);">zona de perigo</div>
+                        <button class="danger-btn" onclick="openWipeModal()">expurgar dados</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 9: SUPORTE -->
+            <div id="view-suporte" class="view-section hide-on-pdf">
+                <div class="panel-card">
+                    <div class="panel-title">perguntas frequentes</div>
+                    <div class="faq-list">
+                        <details class="faq-item">
+                            <summary>Como registro uma nova receita ou custo?</summary>
+                            <p>Vá até <strong>lançamentos</strong>, no menu lateral, preencha data, descrição, natureza e valor, anexe o comprovante e clique em "lançar no sistema".</p>
+                        </details>
+                        <details class="faq-item">
+                            <summary>Como exporto um relatório em PDF?</summary>
+                            <p>Use o botão "exportar pdf" no topo da tela — ele gera um PDF da view que você está visualizando no momento.</p>
+                        </details>
+                        <details class="faq-item">
+                            <summary>Meus dados financeiros estão seguros?</summary>
+                            <p>Sim. Os dados de cada empresa/cliente ficam isolados por ambiente, e o acesso restrito ("modo cliente") limita o que cada pessoa pode ver e fazer.</p>
+                        </details>
+                        <details class="faq-item">
+                            <summary>Como funciona a previsão de caixa (forecasting)?</summary>
+                            <p>O motor de previsibilidade projeta o saldo dos próximos 30 dias com base na média móvel do seu histórico de lançamentos.</p>
+                        </details>
+                        <details class="faq-item">
+                            <summary>Posso dar acesso a um cliente sem que ele veja tudo?</summary>
+                            <p>Sim. Ative "Acesso Restrito (Modo Cliente)" na tela de login para essa pessoa — algumas ações e áreas administrativas ficam ocultas automaticamente.</p>
+                        </details>
+                        <details class="faq-item">
+                            <summary>Não encontrei minha dúvida aqui. E agora?</summary>
+                            <p>Fale com a gente pelo e-mail, telefone ou chat logo abaixo.</p>
+                        </details>
+                    </div>
+                </div>
+
+                <div class="dashboard-lower-grid">
+                    <div class="panel-card">
+                        <div class="panel-title">fale conosco</div>
+                        <ul class="contact-list">
+                            <li>
+                                <svg class="menu-icon" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22 6 12 13 2 6"></polyline></svg>
+                                <a href="mailto:suporte@luppus.com">suporte@luppus.com</a>
+                            </li>
+                            <li>
+                                <svg class="menu-icon" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                <a href="tel:+551100000000">+55 (11) 0000-0000</a>
+                            </li>
+                        </ul>
+                        <p class="support-note">e-mail e telefone de exemplo — substitua pelos dados reais de contato.</p>
+                    </div>
+
+                    <div class="panel-card">
+                        <div class="panel-title">chat de suporte</div>
+                        <div class="chat-mock">
+                            <div class="chat-mock-body">
+                                <div class="chat-bubble chat-bubble-in">Olá! Como podemos ajudar hoje?</div>
+                            </div>
+                            <div class="chat-mock-input">
+                                <input type="text" placeholder="Digite sua mensagem..." disabled>
+                                <button class="action-btn" type="button" disabled>enviar</button>
+                            </div>
+                        </div>
+                        <p class="support-note">chat ainda não conectado — placeholder visual.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
