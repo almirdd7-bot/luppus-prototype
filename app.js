@@ -304,6 +304,16 @@
             if(navToggle) navToggle.checked = false;
         }
 
+        function switchConfigTab(tab) {
+            document.querySelectorAll('.config-tab').forEach(el => el.classList.remove('active'));
+            const activeTab = document.querySelector('.config-tab[data-tab="' + tab + '"]');
+            if(activeTab) activeTab.classList.add('active');
+
+            document.querySelectorAll('.config-tab-panel').forEach(el => el.classList.remove('active'));
+            const activePanel = document.getElementById('config-tab-' + tab);
+            if(activePanel) activePanel.classList.add('active');
+        }
+
         // --- SMART SEARCH (AI LITE) ---
         function applySmartSearch() {
             clearTimeout(filterTimeout);

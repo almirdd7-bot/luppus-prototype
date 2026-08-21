@@ -319,14 +319,159 @@
 
             <!-- VIEW 8: CONFIGURAÇÕES -->
             <div id="view-config" class="view-section hide-on-pdf hide-client">
-                <div class="dashboard-lower-grid">
-                    <div class="panel-card">
-                        <div class="panel-title">gestão de clientes</div>
-                        <button class="outline-btn" onclick="openNewCompanyModal()">+ adicionar cliente</button>
+                <div class="config-tabs">
+                    <button type="button" class="config-tab active" data-tab="cliente" onclick="switchConfigTab('cliente')">cliente</button>
+                    <button type="button" class="config-tab" data-tab="empresa" onclick="switchConfigTab('empresa')">empresa</button>
+                    <button type="button" class="config-tab" data-tab="dev" onclick="switchConfigTab('dev')">dev</button>
+                </div>
+
+                <!-- ABA CLIENTE -->
+                <div id="config-tab-cliente" class="config-tab-panel active">
+                    <div class="settings-grid">
+                        <div class="panel-card">
+                            <div class="panel-title">perfil</div>
+                            <div class="form-group"><label>nome de exibição</label><input type="text" placeholder="Seu nome"></div>
+                            <div class="form-group"><label>e-mail de contato</label><input type="text" placeholder="voce@empresa.com"></div>
+                            <button class="outline-btn" disabled>salvar perfil</button>
+                            <p class="support-note">vinculado à sua conta quando o login por usuário estiver pronto — ainda não salva.</p>
+                        </div>
+
+                        <div class="panel-card">
+                            <div class="panel-title">preferências de exibição</div>
+                            <div class="form-row">
+                                <div class="form-group"><label>formato de data</label><select disabled><option>DD/MM/AAAA</option><option>MM/DD/AAAA</option></select></div>
+                                <div class="form-group"><label>moeda</label><select disabled><option>R$ Real (BRL)</option><option>US$ Dólar (USD)</option><option>€ Euro (EUR)</option></select></div>
+                            </div>
+                            <button class="outline-btn" disabled>salvar preferências</button>
+                            <p class="support-note">ainda não conectado — placeholder visual.</p>
+                        </div>
+
+                        <div class="panel-card">
+                            <div class="panel-title">categorias de lançamento</div>
+                            <div class="chip-list">
+                                <span class="chip">Marketing</span>
+                                <span class="chip">Folha de Pagamento</span>
+                                <span class="chip">Impostos</span>
+                                <span class="chip">Infraestrutura</span>
+                                <span class="chip">Consultoria</span>
+                            </div>
+                            <div class="form-row">
+                                <input type="text" placeholder="Nova categoria" disabled>
+                                <button class="outline-btn" disabled>adicionar</button>
+                            </div>
+                            <p class="support-note">personalize as categorias usadas nos lançamentos — em breve.</p>
+                        </div>
+
+                        <div class="panel-card">
+                            <div class="panel-title">alertas de risco de caixa</div>
+                            <label class="client-checkbox" style="justify-content: flex-start; margin-top: 0;"><input type="checkbox" disabled> avisar quando o risco de caixa ficar crítico</label>
+                            <div class="form-group" style="margin-top: 15px;"><label>avisar se o saldo projetado for menor que</label><input type="number" placeholder="0,00" disabled></div>
+                            <p class="support-note">depende de um serviço de notificação no backend — ainda não existe.</p>
+                        </div>
+
+                        <div class="panel-card">
+                            <div class="panel-title">notificações por e-mail</div>
+                            <label class="client-checkbox" style="justify-content: flex-start; margin-top: 0;"><input type="checkbox" disabled> novo lançamento registrado</label>
+                            <label class="client-checkbox" style="justify-content: flex-start; margin-top: 10px;"><input type="checkbox" disabled> relatório semanal por e-mail</label>
+                            <label class="client-checkbox" style="justify-content: flex-start; margin-top: 10px;"><input type="checkbox" disabled> risco de caixa alto</label>
+                            <p class="support-note">precisa de um serviço de envio de e-mail no backend — ainda não existe.</p>
+                        </div>
+
+                        <div class="panel-card">
+                            <div class="panel-title">meus dados</div>
+                            <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 15px;">Baixe uma cópia de tudo o que está registrado na sua conta.</p>
+                            <button class="outline-btn" disabled>baixar todos os meus dados (JSON)</button>
+                            <p class="support-note">ainda não conectado — placeholder visual.</p>
+                        </div>
                     </div>
-                    <div class="panel-card" style="border-color: #331111;">
-                        <div class="panel-title" style="color: var(--danger);">zona de perigo</div>
-                        <button class="danger-btn" onclick="openWipeModal()">expurgar dados</button>
+                </div>
+
+                <!-- ABA EMPRESA -->
+                <div id="config-tab-empresa" class="config-tab-panel">
+                    <div class="settings-grid">
+                        <div class="panel-card">
+                            <div class="panel-title">dados da empresa</div>
+                            <div class="form-group"><label>nome fantasia</label><input type="text" placeholder="Razão social"></div>
+                            <div class="form-group"><label>cnpj</label><input type="text" placeholder="00.000.000/0000-00"></div>
+                            <div class="form-group"><label>endereço</label><input type="text" placeholder="Endereço da empresa"></div>
+                            <button class="outline-btn" disabled>salvar dados</button>
+                            <p class="support-note">ainda não conectado — placeholder visual.</p>
+                        </div>
+
+                        <div class="panel-card">
+                            <div class="panel-title">gestão de clientes</div>
+                            <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 15px;">Empresas/clientes cadastrados aparecem no seletor no topo da tela.</p>
+                            <button class="outline-btn" onclick="openNewCompanyModal()">+ adicionar cliente</button>
+                        </div>
+
+                        <div class="panel-card" style="grid-column: span 2;">
+                            <div class="panel-title">gestão de usuários e permissões</div>
+                            <ul class="recent-list" style="margin-bottom: 20px;">
+                                <li class="recent-item">
+                                    <div><strong style="color: var(--text-main);">Ana Beatriz</strong> <span style="color:var(--text-muted); font-size:11px;">ana@clientevetta.com</span></div>
+                                    <div style="display:flex; align-items:center; gap:10px;"><select disabled style="width:auto; padding:6px 10px; font-size:11px;"><option>cliente</option></select> <button style="background:transparent; border:none; color:var(--danger); cursor:not-allowed;" disabled>[x]</button></div>
+                                </li>
+                                <li class="recent-item">
+                                    <div><strong style="color: var(--text-main);">Carlos Souza</strong> <span style="color:var(--text-muted); font-size:11px;">carlos@luppus.com</span></div>
+                                    <div style="display:flex; align-items:center; gap:10px;"><select disabled style="width:auto; padding:6px 10px; font-size:11px;"><option>dev</option></select> <button style="background:transparent; border:none; color:var(--danger); cursor:not-allowed;" disabled>[x]</button></div>
+                                </li>
+                                <li class="recent-item">
+                                    <div><strong style="color: var(--text-main);">Você</strong> <span style="color:var(--text-muted); font-size:11px;">dono da conta</span></div>
+                                    <div style="display:flex; align-items:center; gap:10px;"><select disabled style="width:auto; padding:6px 10px; font-size:11px;"><option>empresa</option></select></div>
+                                </li>
+                            </ul>
+                            <div class="form-row">
+                                <input type="text" placeholder="E-mail da pessoa" disabled>
+                                <select disabled><option>papel: cliente</option><option>papel: empresa</option><option>papel: dev</option></select>
+                            </div>
+                            <button class="outline-btn" style="margin-top: 15px;" disabled>convidar pessoa</button>
+                            <p class="support-note">a separação por papéis (cliente / empresa / dev) ainda não é aplicada de verdade — essa tela já existe pronta pra quando a autenticação estiver funcionando.</p>
+                        </div>
+
+                        <div class="panel-card" style="border-color: #331111;">
+                            <div class="panel-title" style="color: var(--danger);">zona de perigo</div>
+                            <button class="danger-btn" onclick="openWipeModal()">expurgar dados</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ABA DEV -->
+                <div id="config-tab-dev" class="config-tab-panel">
+                    <div class="settings-grid">
+                        <div class="panel-card">
+                            <div class="panel-title">conexão com o banco de dados</div>
+                            <div class="form-group"><label>api key</label><input type="text" placeholder="••••••••••••••••" disabled></div>
+                            <div class="form-group"><label>project id</label><input type="text" placeholder="meu-projeto-firebase" disabled></div>
+                            <button class="outline-btn" disabled>salvar conexão</button>
+                            <p class="support-note">hoje isso é digitado na tela de login por qualquer pessoa — o certo é ficar fixo aqui, visível só pra quem tem papel dev.</p>
+                        </div>
+
+                        <div class="panel-card">
+                            <div class="panel-title">chaves de api</div>
+                            <ul class="recent-list" style="margin-bottom: 20px;">
+                                <li class="recent-item">
+                                    <div><strong style="color: var(--text-main);">luppus_live_••••3f2a</strong> <span style="color:var(--text-muted); font-size:11px;">criada em 10/01/2026</span></div>
+                                    <button style="background:transparent; border:none; color:var(--danger); cursor:not-allowed;" disabled>revogar</button>
+                                </li>
+                            </ul>
+                            <button class="outline-btn" disabled>gerar nova chave</button>
+                            <p class="support-note">pra integrações externas — ainda não existe.</p>
+                        </div>
+
+                        <div class="panel-card">
+                            <div class="panel-title">log de auditoria do sistema</div>
+                            <ul class="recent-list">
+                                <li class="recent-item"><span class="recent-desc">Ana Beatriz alterou o papel de Carlos Souza</span><span style="color:var(--text-muted); font-size:11px;">2 dias atrás</span></li>
+                                <li class="recent-item"><span class="recent-desc">Novo cliente cadastrado: Cliente Aurora</span><span style="color:var(--text-muted); font-size:11px;">5 dias atrás</span></li>
+                            </ul>
+                            <p class="support-note">exemplo ilustrativo — o registro de eventos reais ainda não existe.</p>
+                        </div>
+
+                        <div class="panel-card">
+                            <div class="panel-title">ambiente</div>
+                            <div class="form-group"><label>ambiente ativo</label><select disabled><option>Produção</option><option>Homologação</option></select></div>
+                            <p class="support-note">útil pra testar mudanças sem afetar dados reais de cliente — ainda não existe.</p>
+                        </div>
                     </div>
                 </div>
             </div>
