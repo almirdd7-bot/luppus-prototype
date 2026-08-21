@@ -334,31 +334,80 @@
             <!-- VIEW 9: SUPORTE -->
             <div id="view-suporte" class="view-section hide-on-pdf">
                 <div class="panel-card">
+                    <div class="panel-title">como lançar uma receita ou custo</div>
+                    <div class="flow-diagram">
+                        <div class="flow-step">
+                            <div class="flow-step-num">1</div>
+                            <div class="flow-step-title">painel</div>
+                            <p>No menu lateral, clique em "lançamentos".</p>
+                        </div>
+                        <div class="flow-arrow" aria-hidden="true">→</div>
+                        <div class="flow-step">
+                            <div class="flow-step-num">2</div>
+                            <div class="flow-step-title">preencha os dados</div>
+                            <p>Data, descrição, natureza (receita ou custo) e valor.</p>
+                        </div>
+                        <div class="flow-arrow" aria-hidden="true">→</div>
+                        <div class="flow-step">
+                            <div class="flow-step-num">3</div>
+                            <div class="flow-step-title">anexe o comprovante</div>
+                            <p>Obrigatório — nota, recibo ou print do pagamento.</p>
+                        </div>
+                        <div class="flow-arrow" aria-hidden="true">→</div>
+                        <div class="flow-step">
+                            <div class="flow-step-num">4</div>
+                            <div class="flow-step-title">lançar no sistema</div>
+                            <p>Pronto — já aparece no painel e na auditoria.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-card">
                     <div class="panel-title">perguntas frequentes</div>
                     <div class="faq-list">
                         <details class="faq-item">
                             <summary>Como registro uma nova receita ou custo?</summary>
-                            <p>Vá até <strong>lançamentos</strong>, no menu lateral, preencha data, descrição, natureza e valor, anexe o comprovante e clique em "lançar no sistema".</p>
+                            <p>Vá em <strong>lançamentos</strong>, no menu lateral. Preencha a data (ou deixe em branco para usar a data de hoje), uma descrição curta, escolha se é receita ou custo, informe o valor e anexe o comprovante — esse anexo é obrigatório, o sistema não deixa lançar sem ele. Depois é só clicar em "lançar no sistema" que o valor já aparece no painel e na auditoria (veja o fluxograma acima).</p>
+                        </details>
+                        <details class="faq-item">
+                            <summary>Por que preciso anexar um comprovante pra lançar algo?</summary>
+                            <p>É uma trava de conformidade: todo lançamento financeiro precisa ter um documento comprobatório associado (nota fiscal, recibo, print do comprovante de pagamento). Sem o anexo, o botão "lançar no sistema" não confirma o registro — aparece um aviso pedindo o comprovante.</p>
+                        </details>
+                        <details class="faq-item">
+                            <summary>Meu comprovante não sobe / aparece um erro ao anexar.</summary>
+                            <p>O limite de tamanho por arquivo é de 500KB — bem pequeno, de propósito, pra não pesar o sistema. Se o arquivo for uma foto ou PDF escaneado em alta resolução, ele provavelmente passa desse limite. Tente tirar um print em vez de foto, ou reduzir a resolução/qualidade do arquivo antes de anexar.</p>
+                        </details>
+                        <details class="faq-item">
+                            <summary>Importei um extrato bancário (OFX) mas os lançamentos não apareceram sozinhos.</summary>
+                            <p>A importação de OFX (em lançamentos → conciliação ofx) só lê o arquivo e monta uma fila de lançamentos pendentes. Pra cada item da fila, clique em "validar" — isso preenche o formulário de lançamento manual com os dados do banco, mas você ainda precisa anexar um comprovante e confirmar, porque o extrato bancário sozinho não substitui o documento fiscal exigido.</p>
                         </details>
                         <details class="faq-item">
                             <summary>Como exporto um relatório em PDF?</summary>
-                            <p>Use o botão "exportar pdf" no topo da tela — ele gera um PDF da view que você está visualizando no momento.</p>
+                            <p>Use o botão "exportar pdf" no topo da tela. Ele gera um PDF a partir da tela que estiver aberta no momento — então, se quiser um relatório da auditoria completa, abra essa tela antes de exportar.</p>
                         </details>
                         <details class="faq-item">
                             <summary>Meus dados financeiros estão seguros?</summary>
-                            <p>Sim. Os dados de cada empresa/cliente ficam isolados por ambiente, e o acesso restrito ("modo cliente") limita o que cada pessoa pode ver e fazer.</p>
+                            <p>Sim. Os dados de cada empresa/cliente ficam isolados dentro do mesmo ambiente, e o "Acesso Restrito (Modo Cliente)" esconde automaticamente áreas administrativas — como configurações, botões de excluir e a opção de adicionar novas empresas — de quem não deveria ter esse nível de acesso.</p>
                         </details>
                         <details class="faq-item">
                             <summary>Como funciona a previsão de caixa (forecasting)?</summary>
-                            <p>O motor de previsibilidade projeta o saldo dos próximos 30 dias com base na média móvel do seu histórico de lançamentos.</p>
+                            <p>O motor de previsibilidade projeta o saldo dos próximos 30 dias com base na média móvel do seu histórico de lançamentos — ele olha pra receitas e custos já registrados e estima uma tendência. É uma projeção, não uma garantia: quanto mais lançamentos você tiver no histórico, mais precisa ela fica.</p>
                         </details>
                         <details class="faq-item">
                             <summary>Posso dar acesso a um cliente sem que ele veja tudo?</summary>
-                            <p>Sim. Ative "Acesso Restrito (Modo Cliente)" na tela de login para essa pessoa — algumas ações e áreas administrativas ficam ocultas automaticamente.</p>
+                            <p>Sim. Na tela de login, marque "Entrar com Acesso Restrito (Modo Cliente)" antes de acessar. Isso esconde automaticamente configurações, o botão de adicionar empresas, botões de excluir lançamentos/documentos, e a opção de salvar planilhas na nuvem — a pessoa continua vendo os dados financeiros, só não consegue alterar a estrutura do sistema.</p>
+                        </details>
+                        <details class="faq-item">
+                            <summary>Não vejo alguns botões que outras pessoas da equipe veem.</summary>
+                            <p>Provavelmente sua conta está em modo cliente (acesso restrito) — isso é intencional, não um erro. Quem faz login administrativo vê todos os botões; quem entra no modo restrito vê só o que precisa pra acompanhar os números.</p>
+                        </details>
+                        <details class="faq-item">
+                            <summary>Como funciona a busca inteligente (Luppus AI) na auditoria?</summary>
+                            <p>É um filtro de texto que entende alguns termos naturais, não uma inteligência artificial completa. Digite palavras como "receitas" ou "entradas" pra ver só o que entrou, "custos", "saídas" ou "despesas" pra ver só o que saiu, ou parte da descrição de um lançamento (tipo "aws" ou "consultoria") pra filtrar por isso.</p>
                         </details>
                         <details class="faq-item">
                             <summary>Não encontrei minha dúvida aqui. E agora?</summary>
-                            <p>Fale com a gente pelo e-mail, telefone ou chat logo abaixo.</p>
+                            <p>Fale com a gente pelo e-mail, telefone ou chat logo abaixo — se for algo específico da sua conta ou dos seus dados, é mais rápido resolver por lá do que tentando adivinhar por aqui.</p>
                         </details>
                     </div>
                 </div>
