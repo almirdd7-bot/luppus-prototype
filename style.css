@@ -128,8 +128,21 @@
         .dashboard-lower-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 20px; }
         @media (max-width: 1100px) { .dashboard-lower-grid { grid-template-columns: 1fr; } }
 
-        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
-        @media (max-width: 900px) { .settings-grid { grid-template-columns: 1fr; } }
+        .settings-grid { display: flex; flex-direction: column; gap: 20px; }
+
+        .settings-list { display: flex; flex-direction: column; }
+        .settings-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+        .settings-row:first-child { padding-top: 0; }
+        .settings-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .settings-row-label { font-size: 13px; color: var(--text-main); }
+        .settings-row-label small { display: block; font-size: 11px; color: var(--text-muted); margin-top: 3px; font-weight: 400; }
+        .settings-row-control { flex-shrink: 0; }
+        .settings-row-control input[type="text"], .settings-row-control input[type="number"], .settings-row-control select { width: 240px; margin-bottom: 0; }
+        @media (max-width: 600px) {
+            .settings-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .settings-row-control { width: 100%; }
+            .settings-row-control input[type="text"], .settings-row-control input[type="number"], .settings-row-control select { width: 100%; }
+        }
 
         /* CONFIG TABS */
         .config-tabs { display: flex; gap: 4px; margin-bottom: 25px; border-bottom: 1px solid var(--border); }

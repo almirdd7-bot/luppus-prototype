@@ -331,21 +331,31 @@
                 <div id="config-tab-cliente" class="config-tab-panel active">
                     <div class="settings-grid">
                         <div class="panel-card">
-                            <div class="panel-title">perfil</div>
-                            <div class="form-group"><label>nome de exibição</label><input type="text" placeholder="Seu nome"></div>
-                            <div class="form-group"><label>e-mail de contato</label><input type="text" placeholder="voce@empresa.com"></div>
-                            <button class="outline-btn" disabled>salvar perfil</button>
-                            <p class="support-note">vinculado à sua conta quando o login por usuário estiver pronto — ainda não salva.</p>
-                        </div>
-
-                        <div class="panel-card">
-                            <div class="panel-title">preferências de exibição</div>
-                            <div class="form-row">
-                                <div class="form-group"><label>formato de data</label><select disabled><option>DD/MM/AAAA</option><option>MM/DD/AAAA</option></select></div>
-                                <div class="form-group"><label>moeda</label><select disabled><option>R$ Real (BRL)</option><option>US$ Dólar (USD)</option><option>€ Euro (EUR)</option></select></div>
+                            <div class="panel-title">perfil e preferências</div>
+                            <div class="settings-list">
+                                <div class="settings-row">
+                                    <div class="settings-row-label">nome de exibição</div>
+                                    <div class="settings-row-control"><input type="text" placeholder="Seu nome"></div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">e-mail de contato</div>
+                                    <div class="settings-row-control"><input type="text" placeholder="voce@empresa.com"></div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">formato de data</div>
+                                    <div class="settings-row-control"><select><option>DD/MM/AAAA</option><option>MM/DD/AAAA</option></select></div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">moeda</div>
+                                    <div class="settings-row-control"><select><option>R$ Real (BRL)</option><option>US$ Dólar (USD)</option><option>€ Euro (EUR)</option></select></div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">meus dados<small>Baixe uma cópia de tudo o que está registrado na sua conta.</small></div>
+                                    <div class="settings-row-control"><button class="outline-btn" disabled>baixar (json)</button></div>
+                                </div>
                             </div>
-                            <button class="outline-btn" disabled>salvar preferências</button>
-                            <p class="support-note">ainda não conectado — placeholder visual.</p>
+                            <button class="outline-btn" style="margin-top: 20px;" disabled>salvar alterações</button>
+                            <p class="support-note">ainda não conectado — vinculado à sua conta quando o login por usuário estiver pronto.</p>
                         </div>
 
                         <div class="panel-card">
@@ -365,25 +375,26 @@
                         </div>
 
                         <div class="panel-card">
-                            <div class="panel-title">alertas de risco de caixa</div>
-                            <label class="client-checkbox toggle-switch" style="justify-content: flex-start; margin-top: 0;"><input type="checkbox" disabled><span class="toggle-slider"></span><span>avisar quando o risco de caixa ficar crítico</span></label>
-                            <div class="form-group" style="margin-top: 15px;"><label>avisar se o saldo projetado for menor que</label><input type="number" placeholder="0,00" disabled></div>
-                            <p class="support-note">depende de um serviço de notificação no backend — ainda não existe.</p>
-                        </div>
-
-                        <div class="panel-card">
-                            <div class="panel-title">notificações por e-mail</div>
-                            <label class="client-checkbox toggle-switch" style="justify-content: flex-start; margin-top: 0;"><input type="checkbox" disabled><span class="toggle-slider"></span><span>novo lançamento registrado</span></label>
-                            <label class="client-checkbox toggle-switch" style="justify-content: flex-start; margin-top: 10px;"><input type="checkbox" disabled><span class="toggle-slider"></span><span>relatório semanal por e-mail</span></label>
-                            <label class="client-checkbox toggle-switch" style="justify-content: flex-start; margin-top: 10px;"><input type="checkbox" disabled><span class="toggle-slider"></span><span>risco de caixa alto</span></label>
-                            <p class="support-note">precisa de um serviço de envio de e-mail no backend — ainda não existe.</p>
-                        </div>
-
-                        <div class="panel-card">
-                            <div class="panel-title">meus dados</div>
-                            <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 15px;">Baixe uma cópia de tudo o que está registrado na sua conta.</p>
-                            <button class="outline-btn" disabled>baixar todos os meus dados (JSON)</button>
-                            <p class="support-note">ainda não conectado — placeholder visual.</p>
+                            <div class="panel-title">notificações e alertas</div>
+                            <div class="settings-list">
+                                <div class="settings-row">
+                                    <div class="settings-row-label">risco de caixa crítico<small>Avisar quando o motor de previsibilidade indicar risco crítico.</small></div>
+                                    <div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" disabled><span class="toggle-slider"></span></label></div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">saldo projetado abaixo de<small>Avisar quando a projeção de 30 dias ficar menor que este valor.</small></div>
+                                    <div class="settings-row-control"><input type="number" placeholder="0,00" disabled></div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">novo lançamento registrado</div>
+                                    <div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" disabled><span class="toggle-slider"></span></label></div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">relatório semanal por e-mail</div>
+                                    <div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" disabled><span class="toggle-slider"></span></label></div>
+                                </div>
+                            </div>
+                            <p class="support-note">depende de um serviço de notificação/e-mail no backend — ainda não existe.</p>
                         </div>
                     </div>
                 </div>
@@ -392,21 +403,30 @@
                 <div id="config-tab-empresa" class="config-tab-panel">
                     <div class="settings-grid">
                         <div class="panel-card">
-                            <div class="panel-title">dados da empresa</div>
-                            <div class="form-group"><label>nome fantasia</label><input type="text" placeholder="Razão social"></div>
-                            <div class="form-group"><label>cnpj</label><input type="text" placeholder="00.000.000/0000-00"></div>
-                            <div class="form-group"><label>endereço</label><input type="text" placeholder="Endereço da empresa"></div>
-                            <button class="outline-btn" disabled>salvar dados</button>
-                            <p class="support-note">ainda não conectado — placeholder visual.</p>
+                            <div class="panel-title">empresa</div>
+                            <div class="settings-list">
+                                <div class="settings-row">
+                                    <div class="settings-row-label">nome fantasia</div>
+                                    <div class="settings-row-control"><input type="text" placeholder="Razão social"></div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">cnpj</div>
+                                    <div class="settings-row-control"><input type="text" placeholder="00.000.000/0000-00"></div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">endereço</div>
+                                    <div class="settings-row-control"><input type="text" placeholder="Endereço da empresa"></div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">clientes cadastrados<small>Aparecem no seletor no topo da tela.</small></div>
+                                    <div class="settings-row-control"><button class="outline-btn" onclick="openNewCompanyModal()">+ adicionar cliente</button></div>
+                                </div>
+                            </div>
+                            <button class="outline-btn" style="margin-top: 20px;" disabled>salvar dados</button>
+                            <p class="support-note">campos da empresa ainda não conectados — placeholder visual.</p>
                         </div>
 
                         <div class="panel-card">
-                            <div class="panel-title">gestão de clientes</div>
-                            <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 15px;">Empresas/clientes cadastrados aparecem no seletor no topo da tela.</p>
-                            <button class="outline-btn" onclick="openNewCompanyModal()">+ adicionar cliente</button>
-                        </div>
-
-                        <div class="panel-card" style="grid-column: span 2;">
                             <div class="panel-title">gestão de usuários e permissões</div>
                             <ul class="recent-list" style="margin-bottom: 20px;">
                                 <li class="recent-item">
@@ -430,7 +450,7 @@
                             <p class="support-note">a separação por papéis (cliente / empresa / dev) ainda não é aplicada de verdade — essa tela já existe pronta pra quando a autenticação estiver funcionando.</p>
                         </div>
 
-                        <div class="panel-card" style="border-color: #331111; grid-column: span 2;">
+                        <div class="panel-card" style="border-color: #331111;">
                             <div class="panel-title" style="color: var(--danger);">zona de perigo</div>
                             <button class="danger-btn" onclick="openWipeModal()">expurgar dados</button>
                         </div>
@@ -441,10 +461,22 @@
                 <div id="config-tab-dev" class="config-tab-panel">
                     <div class="settings-grid">
                         <div class="panel-card">
-                            <div class="panel-title">conexão com o banco de dados</div>
-                            <div class="form-group"><label>api key</label><input type="text" placeholder="••••••••••••••••" disabled></div>
-                            <div class="form-group"><label>project id</label><input type="text" placeholder="meu-projeto-firebase" disabled></div>
-                            <button class="outline-btn" disabled>salvar conexão</button>
+                            <div class="panel-title">conexão e ambiente</div>
+                            <div class="settings-list">
+                                <div class="settings-row">
+                                    <div class="settings-row-label">api key</div>
+                                    <div class="settings-row-control"><input type="text" placeholder="••••••••••••••••" disabled></div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">project id</div>
+                                    <div class="settings-row-control"><input type="text" placeholder="meu-projeto-firebase" disabled></div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">ambiente ativo<small>Útil pra testar mudanças sem afetar dados reais de cliente.</small></div>
+                                    <div class="settings-row-control"><select disabled><option>Produção</option><option>Homologação</option></select></div>
+                                </div>
+                            </div>
+                            <button class="outline-btn" style="margin-top: 20px;" disabled>salvar conexão</button>
                             <p class="support-note">hoje isso é digitado na tela de login por qualquer pessoa — o certo é ficar fixo aqui, visível só pra quem tem papel dev.</p>
                         </div>
 
@@ -467,12 +499,6 @@
                                 <li class="recent-item"><span class="recent-desc">Novo cliente cadastrado: Cliente Aurora</span><span style="color:var(--text-muted); font-size:11px;">5 dias atrás</span></li>
                             </ul>
                             <p class="support-note">exemplo ilustrativo — o registro de eventos reais ainda não existe.</p>
-                        </div>
-
-                        <div class="panel-card">
-                            <div class="panel-title">ambiente</div>
-                            <div class="form-group"><label>ambiente ativo</label><select disabled><option>Produção</option><option>Homologação</option></select></div>
-                            <p class="support-note">útil pra testar mudanças sem afetar dados reais de cliente — ainda não existe.</p>
                         </div>
                     </div>
                 </div>
