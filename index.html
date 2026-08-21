@@ -56,8 +56,10 @@
             <input type="text" id="api-key-input" placeholder="FIREBASE API KEY" onkeypress="if(event.key === 'Enter') doKeyLogin()">
             <input type="text" id="project-id-input" placeholder="FIREBASE PROJECT ID" onkeypress="if(event.key === 'Enter') doKeyLogin()">
             <button type="button" id="btn-login-action" onclick="doKeyLogin()">Acessar Ecossistema</button>
-            <label class="client-checkbox">
-                <input type="checkbox" id="client-mode-check"> Entrar com Acesso Restrito (Modo Cliente)
+            <label class="client-checkbox toggle-switch">
+                <input type="checkbox" id="client-mode-check">
+                <span class="toggle-slider"></span>
+                <span>Entrar com Acesso Restrito (Modo Cliente)</span>
             </label>
             <div id="login-error" class="error-msg"></div>
             <button type="button" class="demo-link" onclick="startDemo()">ver demonstração com dados de exemplo</button>
@@ -364,16 +366,16 @@
 
                         <div class="panel-card">
                             <div class="panel-title">alertas de risco de caixa</div>
-                            <label class="client-checkbox" style="justify-content: flex-start; margin-top: 0;"><input type="checkbox" disabled> avisar quando o risco de caixa ficar crítico</label>
+                            <label class="client-checkbox toggle-switch" style="justify-content: flex-start; margin-top: 0;"><input type="checkbox" disabled><span class="toggle-slider"></span><span>avisar quando o risco de caixa ficar crítico</span></label>
                             <div class="form-group" style="margin-top: 15px;"><label>avisar se o saldo projetado for menor que</label><input type="number" placeholder="0,00" disabled></div>
                             <p class="support-note">depende de um serviço de notificação no backend — ainda não existe.</p>
                         </div>
 
                         <div class="panel-card">
                             <div class="panel-title">notificações por e-mail</div>
-                            <label class="client-checkbox" style="justify-content: flex-start; margin-top: 0;"><input type="checkbox" disabled> novo lançamento registrado</label>
-                            <label class="client-checkbox" style="justify-content: flex-start; margin-top: 10px;"><input type="checkbox" disabled> relatório semanal por e-mail</label>
-                            <label class="client-checkbox" style="justify-content: flex-start; margin-top: 10px;"><input type="checkbox" disabled> risco de caixa alto</label>
+                            <label class="client-checkbox toggle-switch" style="justify-content: flex-start; margin-top: 0;"><input type="checkbox" disabled><span class="toggle-slider"></span><span>novo lançamento registrado</span></label>
+                            <label class="client-checkbox toggle-switch" style="justify-content: flex-start; margin-top: 10px;"><input type="checkbox" disabled><span class="toggle-slider"></span><span>relatório semanal por e-mail</span></label>
+                            <label class="client-checkbox toggle-switch" style="justify-content: flex-start; margin-top: 10px;"><input type="checkbox" disabled><span class="toggle-slider"></span><span>risco de caixa alto</span></label>
                             <p class="support-note">precisa de um serviço de envio de e-mail no backend — ainda não existe.</p>
                         </div>
 

@@ -58,6 +58,17 @@
 
         .client-checkbox { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--text-muted); font-size: 11px; text-transform: lowercase; letter-spacing: 0.5px; margin-top: 20px; cursor: pointer; }
 
+        /* TOGGLE SWITCH */
+        .toggle-switch { cursor: pointer; }
+        .toggle-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: relative; width: 36px; height: 20px; background: var(--border); border-radius: 999px; flex-shrink: 0; transition: background-color 0.2s; }
+        .toggle-slider::before { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: var(--text-muted); border-radius: 50%; transition: transform 0.2s, background-color 0.2s; }
+        .toggle-switch input:checked + .toggle-slider { background: rgba(214, 180, 106, 0.3); }
+        .toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); background: var(--champagne); }
+        .toggle-switch input:focus-visible + .toggle-slider { outline: 2px solid var(--champagne); outline-offset: 2px; }
+        .toggle-switch input:disabled + .toggle-slider { opacity: 0.5; }
+        .toggle-switch input:disabled ~ span:last-child { opacity: 0.5; }
+
         .login-box button.demo-link { background-color: transparent; color: var(--text-muted); font-weight: 500; text-transform: lowercase; letter-spacing: 0.5px; margin-top: 22px; padding: 18px 0 0; border: none; border-top: 1px solid var(--border); border-radius: 0; }
         .login-box button.demo-link:hover { background-color: transparent; color: var(--champagne); }
 
