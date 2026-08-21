@@ -160,6 +160,7 @@
         .jexcel_content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
         .jexcel_content::-webkit-scrollbar-thumb:hover { background: var(--gold); }
         .jexcel tbody td.selected { background-color: rgba(212, 175, 55, 0.2) !important; border: 1px solid var(--gold) !important; }
+        .jexcel td.editor input, .jexcel td.editor textarea { background-color: var(--card-bg) !important; color: var(--text-main) !important; font-family: 'Inter', sans-serif !important; }
 
         /* LISTS */
         .recent-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 15px;}
