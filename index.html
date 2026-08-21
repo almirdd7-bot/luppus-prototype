@@ -409,15 +409,15 @@
                             <ul class="recent-list" style="margin-bottom: 20px;">
                                 <li class="recent-item">
                                     <div><strong style="color: var(--text-main);">Ana Beatriz</strong> <span style="color:var(--text-muted); font-size:11px;">ana@clientevetta.com</span></div>
-                                    <div style="display:flex; align-items:center; gap:10px;"><select disabled style="width:auto; padding:6px 10px; font-size:11px;"><option>cliente</option></select> <button style="background:transparent; border:none; color:var(--danger); cursor:not-allowed;" disabled>[x]</button></div>
+                                    <div style="display:flex; align-items:center; gap:12px;"><span class="chip">cliente</span> <button style="background:transparent; border:none; color:var(--danger); cursor:not-allowed;" disabled>[x]</button></div>
                                 </li>
                                 <li class="recent-item">
                                     <div><strong style="color: var(--text-main);">Carlos Souza</strong> <span style="color:var(--text-muted); font-size:11px;">carlos@luppus.com</span></div>
-                                    <div style="display:flex; align-items:center; gap:10px;"><select disabled style="width:auto; padding:6px 10px; font-size:11px;"><option>dev</option></select> <button style="background:transparent; border:none; color:var(--danger); cursor:not-allowed;" disabled>[x]</button></div>
+                                    <div style="display:flex; align-items:center; gap:12px;"><span class="chip">dev</span> <button style="background:transparent; border:none; color:var(--danger); cursor:not-allowed;" disabled>[x]</button></div>
                                 </li>
                                 <li class="recent-item">
                                     <div><strong style="color: var(--text-main);">Você</strong> <span style="color:var(--text-muted); font-size:11px;">dono da conta</span></div>
-                                    <div style="display:flex; align-items:center; gap:10px;"><select disabled style="width:auto; padding:6px 10px; font-size:11px;"><option>empresa</option></select></div>
+                                    <div><span class="chip">empresa</span></div>
                                 </li>
                             </ul>
                             <div class="form-row">
@@ -428,7 +428,7 @@
                             <p class="support-note">a separação por papéis (cliente / empresa / dev) ainda não é aplicada de verdade — essa tela já existe pronta pra quando a autenticação estiver funcionando.</p>
                         </div>
 
-                        <div class="panel-card" style="border-color: #331111;">
+                        <div class="panel-card" style="border-color: #331111; grid-column: span 2;">
                             <div class="panel-title" style="color: var(--danger);">zona de perigo</div>
                             <button class="danger-btn" onclick="openWipeModal()">expurgar dados</button>
                         </div>
