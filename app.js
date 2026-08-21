@@ -96,6 +96,43 @@
             if(entryDateEl) entryDateEl.value = getTodayDate();
         }
 
+        function startDemo() {
+            const fmt = (d) => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+            const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return fmt(d); };
+
+            appDB = {
+                companies: [{ id: "demo", name: "LUPPUS Demo", info: "Ambiente de demonstração" }],
+                currentCompanyId: "demo",
+                transactions: { demo: [
+                    { date: daysAgo(1), desc: "Pagamento Consultoria - Cliente Vetta", type: "in", amount: 18500 },
+                    { date: daysAgo(2), desc: "Infraestrutura Cloud (AWS)", type: "out", amount: 2340.50 },
+                    { date: daysAgo(4), desc: "Folha de Pagamento", type: "out", amount: 45200 },
+                    { date: daysAgo(6), desc: "Receita Recorrente SaaS", type: "in", amount: 9800 },
+                    { date: daysAgo(9), desc: "Consultoria Jurídica", type: "out", amount: 3100 },
+                    { date: daysAgo(12), desc: "Novo Contrato - Cliente Aurora", type: "in", amount: 27400 },
+                    { date: daysAgo(15), desc: "Licenças de Software", type: "out", amount: 1890 },
+                    { date: daysAgo(20), desc: "Consultoria Estratégica", type: "in", amount: 15600 }
+                ] },
+                spreadsheets: {},
+                vault: { demo: [
+                    { name: "Contrato Social", date: daysAgo(30), file: { data: "data:text/plain;base64,RGVtb25zdHJhw6fDo28gTFVQUFVT", fname: "contrato-social.txt" } }
+                ] }
+            };
+            isClientMode = false;
+
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('loading-overlay').style.display = 'none';
+            const demoBanner = document.getElementById('demo-banner');
+            if(demoBanner) demoBanner.style.display = 'block';
+
+            const entryDateEl = document.getElementById('entry-date');
+            if(entryDateEl) entryDateEl.value = getTodayDate();
+
+            renderCompanyDropdown();
+            applySmartSearch();
+            renderVault();
+        }
+
         function doKeyLogin() {
             const apiKeyInput = document.getElementById('api-key-input');
             const projIdInput = document.getElementById('project-id-input');
