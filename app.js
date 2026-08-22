@@ -5,7 +5,8 @@
             currentCompanyId: "default",
             transactions: { "default": [] },
             spreadsheets: {},
-            vault: {} 
+            spreadsheetActiveId: {},
+            vault: {}
         };
 
         let chartInstance = null;
@@ -13,11 +14,12 @@
         let forecastChartInstance = null;
         let cloudDB = null;
         let pendingOFX = [];
-        let filterTimeout; 
-        
+        let filterTimeout;
+
         let mySpreadsheet = null;
         let biData = [];
         let biHeaders = [];
+        let spreadsheetUndoStash = {};
 
         function cssVar(name) {
             return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -114,7 +116,21 @@
                     { date: daysAgo(15), desc: "Licenças de Software", type: "out", amount: 1890 },
                     { date: daysAgo(20), desc: "Consultoria Estratégica", type: "in", amount: 15600 }
                 ] },
-                spreadsheets: {},
+                spreadsheets: { demo: [
+                    { id: "sheet-demo-1", name: "Controle de Fornecedores", data: [
+                        ['Fornecedor', 'Contato', 'Categoria', 'Aprovado?'],
+                        ['Cloud Provider AWS', 'contas@aws.com', 'Infraestrutura', 'Sim'],
+                        ['Escritório Jurídico Lima', 'contato@limaadv.com', 'Jurídico', 'Sim'],
+                        ['Consultoria Estratégica X', 'contato@consultx.com', 'Consultoria', 'Não']
+                    ] },
+                    { id: "sheet-demo-2", name: "Estoque", data: [
+                        ['Item', 'Quantidade', 'Estoque Mínimo', 'Status'],
+                        ['Notebooks', '12', '5', 'OK'],
+                        ['Licenças SaaS', '30', '10', 'OK'],
+                        ['Cadeiras', '3', '5', 'Repor']
+                    ] }
+                ] },
+                spreadsheetActiveId: { demo: "sheet-demo-1" },
                 vault: { demo: [
                     { name: "Contrato Social", category: "Contrato", date: daysAgo(30), file: { data: "data:text/plain;base64,RGVtb25zdHJhw6fDo28gTFVQUFVT", fname: "contrato-social.txt" } },
                     { name: "Certidão Negativa de Débitos", category: "Certidão", date: daysAgo(60), expiry: daysAgo(5), file: { data: "data:text/plain;base64,RGVtb25zdHJhw6fDo28gTFVQUFVT", fname: "certidao-negativa.txt" } },
@@ -636,15 +652,171 @@
         }
 
         // --- MÓDULOS BI E PLANILHAS ---
+        const DEFAULT_SHEET_DATA = [['Item', 'Qtd', 'Status'],['', '', ''],['', '', '']];
+        const SHEET_TEMPLATES = {
+            estoque: [['Item', 'Quantidade', 'Estoque Mínimo', 'Status'],['', '', '', '']],
+            pagamentos: [['Fornecedor', 'Vencimento', 'Valor', 'Pago?'],['', '', '', '']],
+            fornecedores: [['Fornecedor', 'Contato', 'Categoria', 'Aprovado?'],['', '', '', '']]
+        };
+
+        function getSheets() {
+            if(!appDB.spreadsheets) appDB.spreadsheets = {};
+            let sheets = appDB.spreadsheets[appDB.currentCompanyId];
+            if(Array.isArray(sheets) && sheets.length > 0 && Array.isArray(sheets[0])) {
+                sheets = [{ id: 'sheet-' + Date.now(), name: 'Planilha 1', data: sheets, savedAt: null }];
+            }
+            if(!sheets || sheets.length === 0) {
+                sheets = [{ id: 'sheet-' + Date.now(), name: 'Planilha 1', data: DEFAULT_SHEET_DATA.map(r => r.slice()), savedAt: null }];
+            }
+            appDB.spreadsheets[appDB.currentCompanyId] = sheets;
+            return sheets;
+        }
+
+        function getActiveSheetId() {
+            if(!appDB.spreadsheetActiveId) appDB.spreadsheetActiveId = {};
+            const sheets = getSheets();
+            let id = appDB.spreadsheetActiveId[appDB.currentCompanyId];
+            if(!id || !sheets.find(s => s.id === id)) id = sheets[0].id;
+            appDB.spreadsheetActiveId[appDB.currentCompanyId] = id;
+            return id;
+        }
+
+        function getActiveSheet() {
+            const sheets = getSheets();
+            const id = getActiveSheetId();
+            return sheets.find(s => s.id === id) || sheets[0];
+        }
+
+        function saveActiveSheetDataLocally() {
+            if(!mySpreadsheet) return;
+            getActiveSheet().data = mySpreadsheet.getData().map(row => row.slice());
+        }
+
         function initSpreadsheet() {
             const container = document.getElementById('spreadsheet-area');
             if(!container || typeof jspreadsheet === 'undefined') return;
             container.innerHTML = '';
-            let data = [['Item', 'Qtd', 'Status'],['', '', ''],['', '', '']];
-            if(appDB.spreadsheets && appDB.spreadsheets[appDB.currentCompanyId] && appDB.spreadsheets[appDB.currentCompanyId].length > 0) data = appDB.spreadsheets[appDB.currentCompanyId];
+            const sheet = getActiveSheet();
+            const data = (sheet.data && sheet.data.length > 0) ? sheet.data : DEFAULT_SHEET_DATA.map(r => r.slice());
             mySpreadsheet = jspreadsheet(container, { data: data, minDimensions: [6, 10], defaultColWidth: 120, tableOverflow: true, tableHeight: '350px', tableWidth: '100%' });
+            renderSheetTabs();
+            renderSheetMeta();
         }
-        function saveSpreadsheet() { if(mySpreadsheet){ appDB.spreadsheets[appDB.currentCompanyId] = mySpreadsheet.getData(); saveToCloud(); showToast('Planilha Salva.'); } }
+
+        function renderSheetTabs() {
+            const sheets = getSheets();
+            const activeId = getActiveSheetId();
+            const container = document.getElementById('sheet-tabs');
+            if(!container) return;
+            const tabsHtml = sheets.map(s => `<button type="button" class="sheet-tab ${s.id === activeId ? 'active' : ''}" onclick="switchSheet('${s.id}')">${s.name}</button>`).join('');
+            const addHtml = isClientMode ? '' : `<button type="button" class="sheet-tab-add" onclick="addSheet()" aria-label="nova planilha">+</button>`;
+            container.innerHTML = tabsHtml + addHtml;
+        }
+
+        function renderSheetMeta() {
+            const el = document.getElementById('sheet-meta');
+            if(!el) return;
+            const sheet = getActiveSheet();
+            el.textContent = sheet.name + (sheet.savedAt ? ` · salvo em ${sheet.savedAt}` : ' · ainda não salvo');
+        }
+
+        function switchSheet(id) {
+            saveActiveSheetDataLocally();
+            appDB.spreadsheetActiveId[appDB.currentCompanyId] = id;
+            initSpreadsheet();
+        }
+
+        function addSheet() {
+            saveActiveSheetDataLocally();
+            const name = prompt('Nome da nova planilha:', 'Nova Planilha');
+            if(!name) return;
+            const sheets = getSheets();
+            const newSheet = { id: 'sheet-' + Date.now(), name: name.trim() || 'Nova Planilha', data: DEFAULT_SHEET_DATA.map(r => r.slice()), savedAt: null };
+            sheets.push(newSheet);
+            appDB.spreadsheetActiveId[appDB.currentCompanyId] = newSheet.id;
+            initSpreadsheet();
+            saveToCloud();
+        }
+
+        function renameSheet() {
+            const sheet = getActiveSheet();
+            const name = prompt('Renomear planilha:', sheet.name);
+            if(!name) return;
+            sheet.name = name.trim() || sheet.name;
+            renderSheetTabs();
+            renderSheetMeta();
+            saveToCloud();
+        }
+
+        function deleteSheet() {
+            const sheets = getSheets();
+            if(sheets.length <= 1) { showToast('Precisa ter ao menos uma planilha.'); return; }
+            if(!confirm('Excluir esta planilha? Essa ação não pode ser desfeita.')) return;
+            const activeId = getActiveSheetId();
+            const idx = sheets.findIndex(s => s.id === activeId);
+            sheets.splice(idx, 1);
+            appDB.spreadsheetActiveId[appDB.currentCompanyId] = sheets[0].id;
+            initSpreadsheet();
+            saveToCloud();
+        }
+
+        function applySheetTemplate(key) {
+            const tpl = SHEET_TEMPLATES[key];
+            if(!tpl) return;
+            if(!confirm('Isso vai substituir o conteúdo da planilha ativa pelo modelo. Continuar?')) return;
+            const sheet = getActiveSheet();
+            const data = tpl.map(r => r.slice());
+            for(let i = 0; i < 8; i++) data.push(new Array(tpl[0].length).fill(''));
+            sheet.data = data;
+            initSpreadsheet();
+            showToast('Modelo aplicado.');
+        }
+
+        function insertTotalRow() {
+            if(!mySpreadsheet) return;
+            const data = mySpreadsheet.getData();
+            if(data.length === 0) return;
+            const colCount = data[0].length;
+            const totalRow = new Array(colCount).fill('');
+            totalRow[0] = 'Total';
+            for(let col = 1; col < colCount; col++) {
+                let sum = 0; let hasNumber = false;
+                for(let row = 1; row < data.length; row++) {
+                    const raw = (data[row][col] || '').toString().trim();
+                    if(raw === '' || raw.toLowerCase() === 'total') continue;
+                    const num = parseFloat(raw.replace(/R\$/g,'').replace(/\./g,'').replace(/,/g,'.'));
+                    if(!isNaN(num)) { sum += num; hasNumber = true; }
+                }
+                totalRow[col] = hasNumber ? sum : '';
+            }
+            data.push(totalRow);
+            getActiveSheet().data = data;
+            initSpreadsheet();
+            showToast('Linha de total inserida.');
+        }
+
+        function undoSpreadsheet() {
+            const sheet = getActiveSheet();
+            const prev = spreadsheetUndoStash[sheet.id];
+            if(!prev) { showToast('Nada para desfazer nesta planilha.'); return; }
+            sheet.data = prev;
+            delete spreadsheetUndoStash[sheet.id];
+            initSpreadsheet();
+            saveToCloud();
+            showToast('Alteração desfeita.');
+        }
+
+        function saveSpreadsheet() {
+            if(!mySpreadsheet) return;
+            const sheet = getActiveSheet();
+            spreadsheetUndoStash[sheet.id] = sheet.data.map(row => row.slice());
+            sheet.data = mySpreadsheet.getData().map(row => row.slice());
+            sheet.savedAt = getTodayDate() + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            saveToCloud();
+            renderSheetMeta();
+            showToast('Planilha Salva.');
+        }
+
         function exportSpreadsheet() { if(mySpreadsheet) mySpreadsheet.download(); }
         
         function handleCSVUpload() {
