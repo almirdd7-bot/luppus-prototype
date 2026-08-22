@@ -656,7 +656,14 @@
         const SHEET_TEMPLATES = {
             estoque: [['Item', 'Quantidade', 'Estoque Mínimo', 'Status'],['', '', '', '']],
             pagamentos: [['Fornecedor', 'Vencimento', 'Valor', 'Pago?'],['', '', '', '']],
-            fornecedores: [['Fornecedor', 'Contato', 'Categoria', 'Aprovado?'],['', '', '', '']]
+            recebimentos: [['Cliente', 'Vencimento', 'Valor', 'Recebido?'],['', '', '', '']],
+            fornecedores: [['Fornecedor', 'Contato', 'Categoria', 'Aprovado?'],['', '', '', '']],
+            contratos: [['Contrato', 'Cliente/Fornecedor', 'Vigência até', 'Status'],['', '', '', '']],
+            planoContas: [['Código', 'Conta', 'Categoria', 'Tipo'],['', '', '', '']],
+            reembolsos: [['Colaborador', 'Data', 'Categoria', 'Valor', 'Aprovado?'],['', '', '', '', '']],
+            compliance: [['Documento', 'Responsável', 'Prazo', 'Concluído?'],['', '', '', '']],
+            ativos: [['Ativo', 'Categoria', 'Data de Aquisição', 'Valor', 'Status'],['', '', '', '', '']],
+            onboarding: [['Cliente', 'Etapa', 'Responsável', 'Concluído?'],['', '', '', '']]
         };
 
         function getSheets() {
