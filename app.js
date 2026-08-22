@@ -106,16 +106,20 @@
             appDB = {
                 companies: [{ id: "demo", name: "LUPPUS Demo", info: "Ambiente de demonstração" }],
                 currentCompanyId: "demo",
-                transactions: { demo: [
-                    { date: daysAgo(1), desc: "Pagamento Consultoria - Cliente Vetta", type: "in", amount: 18500 },
-                    { date: daysAgo(2), desc: "Infraestrutura Cloud (AWS)", type: "out", amount: 2340.50 },
-                    { date: daysAgo(4), desc: "Folha de Pagamento", type: "out", amount: 45200 },
-                    { date: daysAgo(6), desc: "Receita Recorrente SaaS", type: "in", amount: 9800 },
-                    { date: daysAgo(9), desc: "Consultoria Jurídica", type: "out", amount: 3100 },
-                    { date: daysAgo(12), desc: "Novo Contrato - Cliente Aurora", type: "in", amount: 27400 },
-                    { date: daysAgo(15), desc: "Licenças de Software", type: "out", amount: 1890 },
-                    { date: daysAgo(20), desc: "Consultoria Estratégica", type: "in", amount: 15600 }
-                ] },
+                transactions: { demo: (() => {
+                    const demoReceipt = { data: "data:text/plain;base64,RGVtb25zdHJhw6fDo28gTFVQUFVT", name: "comprovante.txt" };
+                    return [
+                        { date: daysAgo(1), desc: "Pagamento Consultoria - Cliente Vetta", type: "in", amount: 18500, category: "Consultoria", receipt: demoReceipt },
+                        { date: daysAgo(2), desc: "Infraestrutura Cloud (AWS)", type: "out", amount: 2340.50, category: "Infraestrutura", receipt: demoReceipt },
+                        { date: daysAgo(4), desc: "Folha de Pagamento", type: "out", amount: 45200, category: "Folha de Pagamento", receipt: demoReceipt },
+                        { date: daysAgo(6), desc: "Receita Recorrente SaaS", type: "in", amount: 9800, category: "Vendas", receipt: demoReceipt },
+                        { date: daysAgo(9), desc: "Consultoria Jurídica", type: "out", amount: 3100, category: "Consultoria", receipt: demoReceipt },
+                        { date: daysAgo(12), desc: "Novo Contrato - Cliente Aurora", type: "in", amount: 27400, category: "Vendas", receipt: demoReceipt },
+                        { date: daysAgo(15), desc: "Licenças de Software", type: "out", amount: 1890, category: "Infraestrutura", receipt: demoReceipt },
+                        { date: daysAgo(20), desc: "Consultoria Estratégica", type: "in", amount: 15600, category: "Consultoria", receipt: demoReceipt },
+                        { date: daysAgo(1), desc: "Reembolso Viagem - Aguardando Nota Fiscal", type: "out", amount: 1250, category: "Outro", receipt: null }
+                    ];
+                })() },
                 spreadsheets: { demo: [
                     { id: "sheet-demo-1", name: "Controle de Fornecedores", data: [
                         ['Fornecedor', 'Contato', 'Categoria', 'Aprovado?'],
@@ -403,11 +407,15 @@
         function renderAuditSummary(data) {
             const el = document.getElementById('audit-filter-summary');
             if(!el) return;
-            let totalIn = 0, totalOut = 0;
-            data.forEach(t => { if(t.type === 'in') totalIn += t.amount; else totalOut += t.amount; });
+            let totalIn = 0, totalOut = 0, pendingCount = 0;
+            data.forEach(t => {
+                if(!t.receipt) { pendingCount++; return; }
+                if(t.type === 'in') totalIn += t.amount; else totalOut += t.amount;
+            });
             const net = totalIn - totalOut;
             const netColor = net >= 0 ? 'var(--success)' : 'var(--danger)';
-            el.innerHTML = `${data.length} lançamento${data.length === 1 ? '' : 's'} · <span style="color: var(--success);">receitas R$ ${totalIn.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span> · <span style="color: var(--danger);">custos R$ ${totalOut.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span> · <span style="color: ${netColor};">líquido R$ ${net.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>`;
+            const pendingHtml = pendingCount > 0 ? ` · <span style="color: var(--danger);">${pendingCount} pendente${pendingCount === 1 ? '' : 's'} (não contabilizado${pendingCount === 1 ? '' : 's'})</span>` : '';
+            el.innerHTML = `${data.length} lançamento${data.length === 1 ? '' : 's'} · <span style="color: var(--success);">receitas R$ ${totalIn.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span> · <span style="color: var(--danger);">custos R$ ${totalOut.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span> · <span style="color: ${netColor};">líquido R$ ${net.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>${pendingHtml}`;
         }
 
         function renderAuditSortIndicators() {
@@ -473,27 +481,39 @@
             let totalIn = 0, totalOut = 0;
             const tbody = document.querySelector('#history-table tbody');
             const recentList = document.getElementById('recent-transactions-list');
-            
+
             if(tbody) tbody.innerHTML = '';
             if(recentList) recentList.innerHTML = '';
 
             dataToRender.forEach((t, index) => {
-                if(t.type === 'in') totalIn += t.amount;
-                if(t.type === 'out') totalOut += t.amount;
-                
+                const isPending = !t.receipt;
+                if(!isPending) {
+                    if(t.type === 'in') totalIn += t.amount;
+                    if(t.type === 'out') totalOut += t.amount;
+                }
+
                 let attachmentHtml = '<span style="color: var(--text-muted);">-</span>';
                 if (t.receipt) { attachmentHtml = `<a href="${t.receipt.data}" download="${t.receipt.name}" class="attachment-link">doc</a>`; }
 
+                const categoryChip = t.category ? ` <span class="chip" style="padding: 2px 8px; font-size: 9px; vertical-align: middle;">${t.category}</span>` : '';
+                const pendingChip = isPending ? ` <span class="chip chip-danger" style="padding: 2px 8px; font-size: 9px; vertical-align: middle;">pendente</span>` : '';
+
                 if(tbody) {
                     const tr = document.createElement('tr');
-                    let btnHtml = isClientMode ? '' : `<button class="icon-btn" onclick="deleteTransaction(${t.originalIndex})" aria-label="excluir lançamento"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>`;
+                    let actionHtml = '';
+                    if(!isClientMode) {
+                        actionHtml = `<div style="display:flex; gap:6px;">
+                            <button class="icon-btn" onclick="editTransaction(${t.originalIndex})" aria-label="editar lançamento"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                            <button class="icon-btn" onclick="deleteTransaction(${t.originalIndex})" aria-label="excluir lançamento"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                        </div>`;
+                    }
                     tr.innerHTML = `
                         <td style="color: var(--text-muted);">${t.date}</td>
-                        <td>${t.desc}</td>
+                        <td>${t.desc}${categoryChip}${pendingChip}</td>
                         <td style="color: ${t.type === 'in' ? 'var(--success)' : 'var(--danger)'};">${t.type === 'in' ? 'receita' : 'custo'}</td>
                         <td>R$ ${t.amount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                         <td class="hide-on-pdf">${attachmentHtml}</td>
-                        <td class="hide-on-pdf hide-client">${btnHtml}</td>
+                        <td class="hide-on-pdf hide-client">${actionHtml}</td>
                     `;
                     tbody.appendChild(tr);
                 }
@@ -501,7 +521,7 @@
                 if(recentList && index < 5) {
                     const li = document.createElement('li');
                     li.className = 'recent-item';
-                    li.innerHTML = `<span class="recent-desc">${t.desc.substring(0,25)}</span><span class="recent-val ${t.type}">${t.type === 'in' ? '+' : '-'}R$ ${t.amount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>`;
+                    li.innerHTML = `<span class="recent-desc">${t.desc.substring(0,25)}${pendingChip}</span><span class="recent-val ${t.type}">${t.type === 'in' ? '+' : '-'}R$ ${t.amount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>`;
                     recentList.appendChild(li);
                 }
             });
@@ -552,6 +572,7 @@
 
             let totalIn = 0, totalOut = 0, oldestDate = null;
             currentTx.forEach(t => {
+                if(!t.receipt) return;
                 if(t.type === 'in') totalIn += t.amount; else totalOut += t.amount;
                 const d = parseBRDate(t.date);
                 if(d && (!oldestDate || d < oldestDate)) oldestDate = d;
@@ -711,24 +732,28 @@
             if(matchCount === 0) { ul.innerHTML = '<li class="empty-state">Nenhum documento encontrado.</li>'; }
         }
 
-        function openVaultPreview(index) {
-            const docs = appDB.vault[appDB.currentCompanyId];
-            const d = docs[index];
-            if(!d) return;
-            document.getElementById('vault-preview-title').textContent = d.name;
+        function openFilePreview(title, fileObj) {
+            document.getElementById('vault-preview-title').textContent = title;
             const body = document.getElementById('vault-preview-body');
-            const mime = (d.file.mime || '').toLowerCase();
-            const fname = (d.file.fname || '').toLowerCase();
+            const mime = (fileObj.mime || '').toLowerCase();
+            const fname = (fileObj.fname || '').toLowerCase();
             const isImage = mime.startsWith('image/') || /\.(png|jpe?g|gif|webp)$/.test(fname);
             const isPdf = mime === 'application/pdf' || fname.endsWith('.pdf');
             if(isImage) {
-                body.innerHTML = `<img src="${d.file.data}" alt="${d.name}">`;
+                body.innerHTML = `<img src="${fileObj.data}" alt="${title}">`;
             } else if(isPdf) {
-                body.innerHTML = `<iframe src="${d.file.data}" title="${d.name}"></iframe>`;
+                body.innerHTML = `<iframe src="${fileObj.data}" title="${title}"></iframe>`;
             } else {
                 body.innerHTML = `<p class="empty-state">Pré-visualização não disponível para este tipo de arquivo. Use o download.</p>`;
             }
             document.getElementById('vault-preview-overlay').style.display = 'flex';
+        }
+
+        function openVaultPreview(index) {
+            const docs = appDB.vault[appDB.currentCompanyId];
+            const d = docs[index];
+            if(!d) return;
+            openFilePreview(d.name, { data: d.file.data, mime: d.file.mime, fname: d.file.fname });
         }
 
         function closeVaultPreview() {
@@ -746,29 +771,123 @@
             return `${dd}/${mm}/${today.getFullYear()}`;
         }
 
-        function processTransaction() {
-            let dateVal = document.getElementById('entry-date').value.trim(); if(!dateVal) dateVal = getTodayDate();
-            const desc = document.getElementById('desc').value.trim(); const type = document.getElementById('type').value; const amount = parseFloat(document.getElementById('amount').value);
-            const file = document.getElementById('receipt').files[0];
-            if (!desc || isNaN(amount) || amount <= 0) { showToast("Preencha descrição e valor."); return; }
-            if (!file) { showToast("COMPLIANCE: Anexe comprovante."); return; }
-            if (file.size > 512000) { showToast("Limite de 500KB excedido."); return; }
+        let editingTransactionIndex = null;
+        let pendingReceiptPreviewData = null;
 
+        function handleReceiptFileChange() {
+            const file = document.getElementById('receipt').files[0];
+            const btn = document.getElementById('receipt-preview-btn');
+            pendingReceiptPreviewData = null;
+            if(!file) { btn.style.display = 'none'; return; }
             const reader = new FileReader();
             reader.onload = function(e) {
-                if (!appDB.transactions[appDB.currentCompanyId]) appDB.transactions[appDB.currentCompanyId] = [];
-                appDB.transactions[appDB.currentCompanyId].push({ date: dateVal, desc, type, amount, receipt: { data: e.target.result, name: file.name } });
-                saveToCloud(); applySmartSearch();
-                document.getElementById('entry-date').value = getTodayDate(); document.getElementById('desc').value = ''; document.getElementById('amount').value = ''; document.getElementById('receipt').value = '';
-                showToast("Lançamento Registrado.");
+                pendingReceiptPreviewData = { data: e.target.result, mime: file.type, fname: file.name };
+                btn.style.display = 'inline-block';
             };
             reader.readAsDataURL(file);
+        }
+
+        function previewReceiptFile() {
+            if(!pendingReceiptPreviewData) return;
+            openFilePreview('Comprovante', pendingReceiptPreviewData);
+        }
+
+        function generateRecurringOccurrences(startDateStr, desc, type, amount, category) {
+            const startDate = parseBRDate(startDateStr);
+            if(!startDate) return;
+            const txArray = appDB.transactions[appDB.currentCompanyId];
+            for(let i = 1; i <= 11; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
+                const dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+                txArray.push({ date: dateStr, desc: desc + ' (recorrente)', type, amount, category, recurring: true, receipt: null });
+            }
+        }
+
+        function processTransaction() {
+            let dateVal = document.getElementById('entry-date').value.trim(); if(!dateVal) dateVal = getTodayDate();
+            const desc = document.getElementById('desc').value.trim();
+            const type = document.getElementById('type').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const category = document.getElementById('entry-category').value;
+            const recurring = document.getElementById('entry-recurring').checked;
+            const file = document.getElementById('receipt').files[0];
+
+            if (!desc || isNaN(amount) || amount <= 0) { showToast("Preencha descrição e valor."); return; }
+            if (file && file.size > 512000) { showToast("Limite de 500KB excedido."); return; }
+
+            const finish = (receiptObj) => {
+                if (!appDB.transactions[appDB.currentCompanyId]) appDB.transactions[appDB.currentCompanyId] = [];
+                const txArray = appDB.transactions[appDB.currentCompanyId];
+                const wasEditing = editingTransactionIndex !== null;
+
+                if(wasEditing) {
+                    const existing = txArray[editingTransactionIndex];
+                    txArray[editingTransactionIndex] = { date: dateVal, desc, type, amount, category, recurring: existing.recurring, receipt: receiptObj || existing.receipt };
+                    showToast(receiptObj || existing.receipt ? "Lançamento atualizado." : "Lançamento atualizado — ainda pendente.");
+                } else {
+                    txArray.push({ date: dateVal, desc, type, amount, category, recurring: recurring || false, receipt: receiptObj || null });
+                    showToast(receiptObj ? "Lançamento registrado." : "Lançamento registrado como pendente — anexe o comprovante depois.");
+                    if(recurring) generateRecurringOccurrences(dateVal, desc, type, amount, category);
+                }
+
+                saveToCloud();
+                applySmartSearch();
+                cancelEditTransaction();
+
+                if(pendingOFX.length > 0) { loadOFX(0); showToast('Próximo item do extrato carregado.'); }
+            };
+
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => finish({ data: e.target.result, name: file.name });
+                reader.readAsDataURL(file);
+            } else {
+                finish(null);
+            }
+        }
+
+        function editTransaction(index) {
+            const t = appDB.transactions[appDB.currentCompanyId][index];
+            if(!t) return;
+            document.getElementById('entry-date').value = t.date;
+            document.getElementById('desc').value = t.desc;
+            document.getElementById('type').value = t.type;
+            document.getElementById('amount').value = t.amount;
+            document.getElementById('entry-category').value = t.category || '';
+            document.getElementById('receipt').value = '';
+            pendingReceiptPreviewData = null;
+            document.getElementById('receipt-preview-btn').style.display = 'none';
+            editingTransactionIndex = index;
+            document.getElementById('entry-form-title').textContent = 'editar lançamento';
+            document.getElementById('entry-submit-btn').textContent = 'salvar alterações';
+            document.getElementById('entry-cancel-btn').style.display = 'block';
+            const noteEl = document.getElementById('receipt-current-note');
+            noteEl.textContent = t.receipt ? `comprovante atual: ${t.receipt.name} — deixe o campo em branco para manter.` : 'sem comprovante — este lançamento está pendente e não entra nos totais.';
+            noteEl.style.display = 'block';
+            switchView('lancamentos');
+        }
+
+        function cancelEditTransaction() {
+            editingTransactionIndex = null;
+            document.getElementById('entry-date').value = getTodayDate();
+            document.getElementById('desc').value = '';
+            document.getElementById('amount').value = '';
+            document.getElementById('entry-category').value = '';
+            document.getElementById('entry-recurring').checked = false;
+            document.getElementById('receipt').value = '';
+            pendingReceiptPreviewData = null;
+            document.getElementById('receipt-preview-btn').style.display = 'none';
+            document.getElementById('entry-form-title').textContent = 'registro manual';
+            document.getElementById('entry-submit-btn').textContent = 'lançar no sistema';
+            document.getElementById('entry-cancel-btn').style.display = 'none';
+            document.getElementById('receipt-current-note').style.display = 'none';
         }
 
         function deleteTransaction(index) {
             if(confirm("Excluir lançamento?")) { appDB.transactions[appDB.currentCompanyId].splice(index, 1); saveToCloud(); applySmartSearch(); }
         }
-        
+
         function handleOFX() {
             const fileInput = document.getElementById('ofx-file');
             if(!fileInput.files[0]) return;

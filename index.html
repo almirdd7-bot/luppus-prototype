@@ -232,15 +232,37 @@
             <div id="view-lancamentos" class="view-section">
                 <div class="dashboard-lower-grid">
                     <div class="panel-card">
-                        <div class="panel-title">registro manual</div>
+                        <div class="panel-title" id="entry-form-title">registro manual</div>
                         <div class="form-group"><label>data</label><input type="text" id="entry-date" placeholder="DD/MM/AAAA (Deixe vazio para hoje)"></div>
                         <div class="form-group"><label>descrição</label><input type="text" id="desc" placeholder="Ex: Pagamento Fornecedor"></div>
                         <div class="form-row">
                             <div class="form-group"><label>natureza</label><select id="type"><option value="in">Receita (+)</option><option value="out">Custo (-)</option></select></div>
                             <div class="form-group"><label>valor (R$)</label><input type="number" id="amount" placeholder="0.00" step="0.01"></div>
                         </div>
-                        <div class="form-group"><label style="color: var(--danger);">anexo obrigatório (máx 500kb)</label><input type="file" id="receipt" accept=".pdf, image/jpeg, image/png"></div>
-                        <button class="action-btn" style="width: 100%;" onclick="processTransaction()">lançar no sistema</button>
+                        <div class="form-group"><label>categoria</label>
+                            <select id="entry-category">
+                                <option value="">sem categoria</option>
+                                <option>Marketing</option>
+                                <option>Folha de Pagamento</option>
+                                <option>Impostos</option>
+                                <option>Infraestrutura</option>
+                                <option>Consultoria</option>
+                                <option>Vendas</option>
+                                <option>Outro</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                            <label style="margin-bottom: 0; flex: 1;">repetir mensalmente<small style="display: block; color: var(--text-muted); font-weight: 400; text-transform: none; margin-top: 4px;">gera os próximos 11 meses como lançamentos pendentes.</small></label>
+                            <label class="toggle-switch"><input type="checkbox" id="entry-recurring"><span class="toggle-slider"></span></label>
+                        </div>
+                        <div class="form-group">
+                            <label>comprovante (opcional)<small style="display: block; color: var(--text-muted); font-weight: 400; text-transform: none; margin-top: 4px;">sem comprovante, o lançamento fica pendente e não entra nos totais até você anexar.</small></label>
+                            <input type="file" id="receipt" accept=".pdf, image/jpeg, image/png" onchange="handleReceiptFileChange()">
+                            <button type="button" class="outline-btn" id="receipt-preview-btn" style="display: none; margin-top: 10px; padding: 6px 12px;" onclick="previewReceiptFile()">visualizar comprovante</button>
+                            <p id="receipt-current-note" class="support-note" style="display: none; margin-top: 10px;"></p>
+                        </div>
+                        <button class="action-btn" id="entry-submit-btn" style="width: 100%;" onclick="processTransaction()">lançar no sistema</button>
+                        <button class="outline-btn" id="entry-cancel-btn" style="width: 100%; margin-top: 10px; display: none;" onclick="cancelEditTransaction()">cancelar edição</button>
                     </div>
 
                     <div class="panel-card">
@@ -267,7 +289,7 @@
                         <button type="button" class="chip" onclick="setAuditQuickFilter('receitas')">só receitas</button>
                         <button type="button" class="chip" onclick="setAuditQuickFilter('custos')">só custos</button>
                         <button type="button" class="chip" onclick="setAuditQuickFilter('ultimos30')">últimos 30 dias</button>
-                        <button type="button" class="chip" id="audit-chip-no-attachment" onclick="toggleAuditNoAttachment()">sem anexo</button>
+                        <button type="button" class="chip" id="audit-chip-no-attachment" onclick="toggleAuditNoAttachment()">pendentes</button>
                     </div>
                     <div class="form-row" style="margin-top: 18px; margin-bottom: 0;">
                         <div class="form-group" style="margin-bottom: 0;"><label>de</label><input type="text" id="audit-date-from" placeholder="DD/MM/AAAA" oninput="applySmartSearch()"></div>
