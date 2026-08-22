@@ -279,16 +279,41 @@
             <!-- VIEW 4: PROJEÇÃO / FORECAST -->
             <div id="view-projecao" class="view-section">
                 <div class="panel-card" style="margin-bottom: 20px;">
-                    <div class="panel-title">motor de previsibilidade (30 dias)</div>
-                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 20px;">Análise algorítmica baseada na média móvel do fluxo de caixa histórico.</p>
+                    <div class="panel-title">
+                        motor de previsibilidade
+                        <button class="outline-btn hide-on-pdf" style="padding: 4px 10px; font-size: 10px;" onclick="exportForecastChart()">baixar gráfico</button>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 20px;">Projeção baseada na média diária real de fluxo de caixa, calculada a partir do histórico de lançamentos.</p>
                     <div class="kpi-grid">
-                        <div class="kpi-card"><div class="kpi-title">saldo projetado (30d)</div><div class="kpi-value" id="forecast-30">R$ 0,00</div></div>
+                        <div class="kpi-card"><div class="kpi-title" id="forecast-30-label">saldo projetado (30d)</div><div class="kpi-value" id="forecast-30">R$ 0,00</div></div>
                         <div class="kpi-card"><div class="kpi-title">risco de caixa</div><div class="kpi-value" id="forecast-risk">Baixo</div></div>
+                    </div>
+                    <div class="form-row" style="margin-top: 5px;">
+                        <div class="form-group"><label>horizonte de projeção</label>
+                            <select id="forecast-horizon" onchange="updateForecasting()">
+                                <option value="7">7 dias</option>
+                                <option value="30" selected>30 dias</option>
+                                <option value="60">60 dias</option>
+                                <option value="90">90 dias</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>limite mínimo de saldo (opcional)</label><input type="number" id="forecast-threshold" placeholder="0,00" oninput="updateForecasting()"></div>
                     </div>
                     <div class="chart-container" style="height: 300px;">
                         <p id="forecast-empty-state" class="empty-state">Sem lançamentos suficientes para projetar o caixa ainda.</p>
                         <canvas id="forecastChart" style="display: none;"></canvas>
                     </div>
+                    <p id="forecast-threshold-warning" class="support-note" style="display: none; color: var(--danger); margin-top: 14px;"></p>
+                </div>
+
+                <div class="panel-card">
+                    <div class="panel-title">simular cenário</div>
+                    <p class="support-note" style="margin-top: 0; margin-bottom: 18px;">ajuste os campos abaixo para ver como mudanças futuras afetariam a projeção — não altera seus lançamentos reais.</p>
+                    <div class="form-row">
+                        <div class="form-group"><label>custo fixo extra por mês (R$)</label><input type="number" id="forecast-extra-cost" placeholder="0,00" oninput="updateForecasting()"></div>
+                        <div class="form-group"><label>variação de receita (%)</label><input type="number" id="forecast-revenue-change" placeholder="0" oninput="updateForecasting()"></div>
+                    </div>
+                    <button class="outline-btn" onclick="resetForecastScenario()">limpar cenário</button>
                 </div>
             </div>
 

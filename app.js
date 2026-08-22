@@ -438,42 +438,92 @@
             const currentTx = appDB.transactions[appDB.currentCompanyId] || [];
             const forecastEmpty = document.getElementById('forecast-empty-state');
             const forecastCanvas = document.getElementById('forecastChart');
+            const warningEl = document.getElementById('forecast-threshold-warning');
             if(currentTx.length === 0) {
                 if(forecastEmpty) forecastEmpty.style.display = 'block';
                 if(forecastCanvas) forecastCanvas.style.display = 'none';
+                if(warningEl) warningEl.style.display = 'none';
                 return;
             }
             if(forecastEmpty) forecastEmpty.style.display = 'none';
             if(forecastCanvas) forecastCanvas.style.display = 'block';
 
-            let totalIn = 0, totalOut = 0;
-            currentTx.forEach(t => { if(t.type === 'in') totalIn += t.amount; else totalOut += t.amount; });
-            let currentCash = totalIn - totalOut;
+            let totalIn = 0, totalOut = 0, oldestDate = null;
+            currentTx.forEach(t => {
+                if(t.type === 'in') totalIn += t.amount; else totalOut += t.amount;
+                const d = parseBRDate(t.date);
+                if(d && (!oldestDate || d < oldestDate)) oldestDate = d;
+            });
+            const currentCash = totalIn - totalOut;
 
-            let dailyAvgCash = currentTx.length > 0 ? (currentCash / (currentTx.length * 2)) : 0; 
-            let dataPoints = [currentCash]; let labels = ['Hoje'];
-            
-            for(let i=1; i<=3; i++) {
-                dataPoints.push(currentCash + (dailyAvgCash * i * 10)); 
-                labels.push('+' + (i*10) + 'd');
+            const today = new Date(); today.setHours(0,0,0,0);
+            const daysCovered = oldestDate ? Math.max(1, Math.round((today - oldestDate) / 86400000)) : 1;
+            const dailyAvgIn = totalIn / daysCovered;
+            const dailyAvgOut = totalOut / daysCovered;
+
+            const extraCost = parseFloat(document.getElementById('forecast-extra-cost').value) || 0;
+            const revenueChangePct = parseFloat(document.getElementById('forecast-revenue-change').value) || 0;
+            const adjustedDailyIn = dailyAvgIn * (1 + revenueChangePct / 100);
+            const adjustedDailyOut = dailyAvgOut + (extraCost / 30);
+            const dailyNet = adjustedDailyIn - adjustedDailyOut;
+
+            const horizon = parseInt(document.getElementById('forecast-horizon').value, 10) || 30;
+            const steps = 6;
+            let dataPoints = []; let labels = [];
+            for(let i = 0; i <= steps; i++) {
+                const day = Math.round((horizon / steps) * i);
+                dataPoints.push(currentCash + dailyNet * day);
+                labels.push(day === 0 ? 'Hoje' : '+' + day + 'd');
             }
-            
-            let projected30 = dataPoints[dataPoints.length-1];
-            document.getElementById('forecast-30').innerText = `R$ ${projected30.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            document.getElementById('forecast-30').style.color = projected30 >= 0 ? 'var(--success)' : 'var(--danger)';
-            
+
+            const projectedEnd = dataPoints[dataPoints.length - 1];
+            document.getElementById('forecast-30-label').textContent = `saldo projetado (${horizon}d)`;
+            document.getElementById('forecast-30').innerText = `R$ ${projectedEnd.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('forecast-30').style.color = projectedEnd >= 0 ? 'var(--success)' : 'var(--danger)';
+
             const riskEl = document.getElementById('forecast-risk');
-            if(projected30 < 0) { riskEl.innerText = 'CRÍTICO'; riskEl.style.color = 'var(--danger)'; }
-            else if(projected30 < (currentCash/2)) { riskEl.innerText = 'MÉDIO'; riskEl.style.color = 'var(--gold)'; }
+            if(projectedEnd < 0) { riskEl.innerText = 'CRÍTICO'; riskEl.style.color = 'var(--danger)'; }
+            else if(projectedEnd < (currentCash/2)) { riskEl.innerText = 'MÉDIO'; riskEl.style.color = 'var(--gold)'; }
             else { riskEl.innerText = 'BAIXO'; riskEl.style.color = 'var(--success)'; }
+
+            const thresholdRaw = document.getElementById('forecast-threshold').value;
+            const threshold = thresholdRaw === '' ? null : parseFloat(thresholdRaw);
+            const hasThreshold = threshold !== null && !isNaN(threshold);
 
             const ctx = document.getElementById('forecastChart').getContext('2d');
             if(forecastChartInstance) forecastChartInstance.destroy();
+            const datasets = [{ label: 'Saldo Projetado', data: dataPoints, borderColor: cssVar('--champagne'), backgroundColor: verticalGradient(ctx, '--champagne', 300, 0.35, 0), fill: true, borderDash: [5, 5], tension: 0.4, pointBackgroundColor: cssVar('--champagne'), pointBorderColor: cssVar('--obsidian'), pointRadius: 4, pointHoverRadius: 6 }];
+            if(hasThreshold) {
+                datasets.push({ label: 'Limite Mínimo', data: labels.map(() => threshold), borderColor: cssVar('--danger'), borderDash: [3, 3], pointRadius: 0, fill: false, tension: 0 });
+            }
             forecastChartInstance = new Chart(ctx, {
                 type: 'line',
-                data: { labels: labels, datasets: [{ label: 'Saldo Projetado', data: dataPoints, borderColor: cssVar('--champagne'), backgroundColor: verticalGradient(ctx, '--champagne', 300, 0.35, 0), fill: true, borderDash: [5, 5], tension: 0.4, pointBackgroundColor: cssVar('--champagne'), pointBorderColor: cssVar('--obsidian'), pointRadius: 4, pointHoverRadius: 6 }] },
-                options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { y: { grid: {color: cssVar('--border')} }, x: { grid: {display: false} } }, plugins: { legend: { display: false } } }
+                data: { labels: labels, datasets: datasets },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { y: { grid: {color: cssVar('--border')} }, x: { grid: {display: false} } }, plugins: { legend: { display: hasThreshold } } }
             });
+
+            if(warningEl) {
+                if(hasThreshold && dataPoints.some(v => v < threshold)) {
+                    warningEl.style.display = 'block';
+                    warningEl.textContent = `atenção: a projeção cruza o limite mínimo de R$ ${threshold.toLocaleString('pt-BR', {minimumFractionDigits: 2})} dentro do horizonte de ${horizon} dias.`;
+                } else {
+                    warningEl.style.display = 'none';
+                }
+            }
+        }
+
+        function resetForecastScenario() {
+            document.getElementById('forecast-extra-cost').value = '';
+            document.getElementById('forecast-revenue-change').value = '';
+            updateForecasting();
+        }
+
+        function exportForecastChart() {
+            if(!forecastChartInstance) { showToast("Gere uma projeção primeiro."); return; }
+            const link = document.createElement('a');
+            link.href = forecastChartInstance.toBase64Image();
+            link.download = `luppus_projecao_${Date.now()}.png`;
+            link.click();
         }
 
         // --- COFRE DIGITAL (VAULT) ---
