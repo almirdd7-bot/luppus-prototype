@@ -363,7 +363,7 @@
 
                 if(tbody) {
                     const tr = document.createElement('tr');
-                    let btnHtml = isClientMode ? '' : `<button onclick="deleteTransaction(${t.originalIndex})" style="background:transparent; border:none; color:var(--danger); cursor:pointer;">[x]</button>`;
+                    let btnHtml = isClientMode ? '' : `<button class="icon-btn" onclick="deleteTransaction(${t.originalIndex})" aria-label="excluir lançamento"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>`;
                     tr.innerHTML = `
                         <td style="color: var(--text-muted);">${t.date}</td>
                         <td>${t.desc}</td>
@@ -488,7 +488,7 @@
             docs.forEach((d, i) => {
                 const li = document.createElement('li');
                 li.className = 'recent-item';
-                let btnHtml = isClientMode ? '' : `<button onclick="deleteVault(${i})" style="background:transparent; border:none; color:var(--danger); cursor:pointer;">[x]</button>`;
+                let btnHtml = isClientMode ? '' : `<button class="icon-btn" onclick="deleteVault(${i})" aria-label="excluir documento"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>`;
                 li.innerHTML = `
                     <div><strong style="color: var(--text-main);">${d.name}</strong> <span style="color:var(--text-muted); font-size:10px;">(${d.date})</span></div>
                     <div><a href="${d.file.data}" download="${d.file.fname}" class="attachment-link">Download</a> ${btnHtml}</div>

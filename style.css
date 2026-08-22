@@ -167,6 +167,11 @@
         .config-tab-panel.active { display: block; }
 
         .chip-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+
+        .icon-btn { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0; background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; transition: 0.2s; }
+        .icon-btn:hover { border-color: var(--danger); color: var(--danger); background: rgba(240, 108, 108, 0.1); }
+        .icon-btn:disabled { cursor: not-allowed; opacity: 0.4; }
+        .icon-btn:disabled:hover { border-color: var(--border); color: var(--text-muted); background: transparent; }
         .chip { background: rgba(212, 175, 55, 0.1); border: 1px solid var(--border); color: var(--text-main); font-size: 11px; padding: 6px 12px; border-radius: var(--radius-sm); }
 
         .panel-card { background-color: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
