@@ -603,6 +603,8 @@
         function updatePainelCategoryChart() {
             const canvas = document.getElementById('categoryChart');
             const emptyEl = document.getElementById('category-chart-empty');
+            const layoutEl = document.getElementById('category-breakdown-layout');
+            const listEl = document.getElementById('category-breakdown-list');
             if(!canvas) return;
 
             const currentTx = appDB.transactions[appDB.currentCompanyId] || [];
@@ -610,26 +612,46 @@
             currentTx.forEach(t => {
                 if(!t.receipt || t.type !== 'out') return;
                 const cat = t.category || 'Sem categoria';
-                grouped[cat] = (grouped[cat] || 0) + t.amount;
+                if(!grouped[cat]) grouped[cat] = { total: 0, count: 0 };
+                grouped[cat].total += t.amount;
+                grouped[cat].count++;
             });
-            const labels = Object.keys(grouped);
+            const entries = Object.entries(grouped).sort((a, b) => b[1].total - a[1].total);
 
-            if(labels.length === 0) {
+            if(entries.length === 0) {
                 if(emptyEl) emptyEl.style.display = 'block';
-                canvas.style.display = 'none';
+                if(layoutEl) layoutEl.style.display = 'none';
                 if(categoryChartInstance) { categoryChartInstance.destroy(); categoryChartInstance = null; }
                 return;
             }
             if(emptyEl) emptyEl.style.display = 'none';
-            canvas.style.display = 'block';
+            if(layoutEl) layoutEl.style.display = 'flex';
+
+            const labels = entries.map(e => e[0]);
+            const values = entries.map(e => e[1].total);
+            const grandTotal = values.reduce((sum, v) => sum + v, 0);
+            const colors = categoricalPalette(labels.length);
 
             const ctx = canvas.getContext('2d');
             if(categoryChartInstance) categoryChartInstance.destroy();
             categoryChartInstance = new Chart(ctx, {
                 type: 'doughnut',
-                data: { labels: labels, datasets: [{ data: Object.values(grouped), backgroundColor: categoricalPalette(labels.length), borderColor: cssVar('--card-bg'), borderWidth: 2 }] },
-                options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: true, position: 'right', labels: { color: cssVar('--text-muted'), font: { size: 11 }, boxWidth: 12 } } } }
+                data: { labels: labels, datasets: [{ data: values, backgroundColor: colors, borderColor: cssVar('--card-bg'), borderWidth: 2 }] },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, cutout: '65%', plugins: { legend: { display: false } } }
             });
+
+            if(listEl) {
+                listEl.innerHTML = entries.map(([cat, data], i) => {
+                    const pct = grandTotal > 0 ? (data.total / grandTotal * 100) : 0;
+                    return `
+                        <li class="category-breakdown-item">
+                            <span class="category-breakdown-dot" style="background: ${colors[i]};"></span>
+                            <span class="category-breakdown-info"><strong>${cat}</strong><span>${data.count} lançamento${data.count === 1 ? '' : 's'}</span></span>
+                            <span class="category-breakdown-value"><strong>R$ ${data.total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong><span>${pct.toFixed(1)}% do total</span></span>
+                        </li>
+                    `;
+                }).join('');
+            }
         }
 
         function updatePainelForecastSummary() {
