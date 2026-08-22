@@ -597,6 +597,29 @@
                         </div>
 
                         <div class="panel-card">
+                            <div class="panel-title">status do sistema</div>
+                            <div class="settings-list">
+                                <div class="settings-row">
+                                    <div class="settings-row-label">status da api</div>
+                                    <div class="settings-row-control"><span class="chip chip-success">● operacional</span></div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">última sincronização</div>
+                                    <div class="settings-row-control" style="color: var(--text-main); font-size: 13px;">há 2 minutos</div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">latência média</div>
+                                    <div class="settings-row-control" style="color: var(--text-main); font-size: 13px;">184ms</div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">uptime (30 dias)</div>
+                                    <div class="settings-row-control" style="color: var(--text-main); font-size: 13px;">99,98%</div>
+                                </div>
+                            </div>
+                            <p class="support-note">exemplo ilustrativo — depende de um monitoramento real de infraestrutura, que ainda não existe.</p>
+                        </div>
+
+                        <div class="panel-card">
                             <div class="panel-title">chaves de api</div>
                             <ul class="recent-list" style="margin-bottom: 20px;">
                                 <li class="recent-item">
@@ -609,12 +632,77 @@
                         </div>
 
                         <div class="panel-card">
+                            <div class="panel-title">webhooks</div>
+                            <div class="settings-list">
+                                <div class="settings-row">
+                                    <div class="settings-row-label">url de destino<small>Endpoint que vai receber os eventos via POST.</small></div>
+                                    <div class="settings-row-control"><input type="text" placeholder="https://seu-servico.com/webhook" disabled></div>
+                                </div>
+                            </div>
+                            <div class="chip-list" style="margin-top: 18px;">
+                                <span class="chip">novo lançamento</span>
+                                <span class="chip">alerta de risco crítico</span>
+                                <span class="chip">novo cliente cadastrado</span>
+                            </div>
+                            <button class="outline-btn" style="margin-top: 5px;" disabled>salvar webhook</button>
+                            <p class="support-note">ainda não existe no backend — o Kaike configura quais eventos disparam o envio.</p>
+                        </div>
+
+                        <div class="panel-card">
+                            <div class="panel-title">feature flags</div>
+                            <div class="settings-list">
+                                <div class="settings-row">
+                                    <div class="settings-row-label">ia preditiva avançada<small>Nova versão do motor de previsibilidade, ainda em teste.</small></div>
+                                    <div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" disabled><span class="toggle-slider"></span></label></div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">exportação em lote<small>Exportar relatórios de vários clientes de uma vez.</small></div>
+                                    <div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" disabled><span class="toggle-slider"></span></label></div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">novo layout de forecasting<small>Versão em desenvolvimento da tela de projeção.</small></div>
+                                    <div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" disabled><span class="toggle-slider"></span></label></div>
+                                </div>
+                            </div>
+                            <p class="support-note">testa funcionalidades novas sem afetar todos os clientes de uma vez — ainda não existe.</p>
+                        </div>
+
+                        <div class="panel-card">
                             <div class="panel-title">log de auditoria do sistema</div>
                             <ul class="recent-list">
                                 <li class="recent-item"><span class="recent-desc">Ana Beatriz alterou o papel de Carlos Souza</span><span style="color:var(--text-muted); font-size:11px;">2 dias atrás</span></li>
                                 <li class="recent-item"><span class="recent-desc">Novo cliente cadastrado: Cliente Aurora</span><span style="color:var(--text-muted); font-size:11px;">5 dias atrás</span></li>
                             </ul>
                             <p class="support-note">exemplo ilustrativo — o registro de eventos reais ainda não existe.</p>
+                        </div>
+
+                        <div class="panel-card">
+                            <div class="panel-title">logs de erro técnico</div>
+                            <ul class="recent-list">
+                                <li class="recent-item"><span class="recent-desc" style="color: var(--danger);">Falha ao sincronizar com o Firebase — timeout</span><span style="color:var(--text-muted); font-size:11px;">12 min atrás</span></li>
+                                <li class="recent-item"><span class="recent-desc" style="color: var(--danger);">Erro ao gerar PDF do relatório</span><span style="color:var(--text-muted); font-size:11px;">3 horas atrás</span></li>
+                                <li class="recent-item"><span class="recent-desc">Reconexão automática bem-sucedida</span><span style="color:var(--text-muted); font-size:11px;">3 horas atrás</span></li>
+                            </ul>
+                            <p class="support-note">exemplo ilustrativo — diferente do log de auditoria, esse seria só pra erros técnicos do sistema.</p>
+                        </div>
+
+                        <div class="panel-card">
+                            <div class="panel-title">documentação e versão</div>
+                            <div class="settings-list">
+                                <div class="settings-row">
+                                    <div class="settings-row-label">versão atual</div>
+                                    <div class="settings-row-control" style="color: var(--text-main); font-size: 13px;">v0.1.0 (protótipo)</div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">última atualização</div>
+                                    <div class="settings-row-control" style="color: var(--text-main); font-size: 13px;">21/08/2026</div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">documentação da api<small>Referência rápida pra quem for integrar ou dar manutenção.</small></div>
+                                    <div class="settings-row-control"><button class="outline-btn" disabled>abrir docs</button></div>
+                                </div>
+                            </div>
+                            <p class="support-note">a documentação ainda não existe — esse card já fica pronto pra quando o Kaike escrever.</p>
                         </div>
 
                         <div class="panel-card" style="border-color: #331111;">
