@@ -94,12 +94,12 @@
                     <input type="password" id="project-id-input" placeholder="FIREBASE PROJECT ID" onkeypress="if(event.key === 'Enter') doKeyLogin()">
                     <button type="button" class="password-toggle" onclick="togglePasswordVisibility('project-id-input', this)" aria-label="mostrar project id"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
                 </div>
-                <p class="support-note" style="margin-bottom: 18px;">essas credenciais vêm do seu administrador de sistema.</p>
+                <p class="support-note" style="margin-bottom: 18px;">Essas credenciais vêm do seu administrador de sistema.</p>
                 <button type="button" id="btn-login-action" onclick="doKeyLogin()">Acessar Ecossistema</button>
                 <label class="client-checkbox toggle-switch">
                     <input type="checkbox" id="client-mode-check">
                     <span class="toggle-slider"></span>
-                    <span>testar como modo cliente</span>
+                    <span>Testar como modo cliente</span>
                 </label>
             </div>
 
@@ -116,11 +116,11 @@
         <div class="login-box login-box--wide">
             <img class="login-logo login-logo--sm" src="assets/logo-vertical.png" alt="LUPPUS — find the signal">
             <h1 style="font-size: 20px;">recuperar senha</h1>
-            <p>escolha como quer receber o código</p>
+            <p>Escolha como quer receber o código</p>
 
             <div class="chip-list" style="justify-content: center; margin-bottom: 24px;">
                 <button type="button" class="chip active" id="recovery-tab-email" onclick="switchRecoveryChannel('email')">e-mail</button>
-                <button type="button" class="chip" id="recovery-tab-whatsapp" onclick="switchRecoveryChannel('whatsapp')">whatsapp</button>
+                <button type="button" class="chip" id="recovery-tab-whatsapp" onclick="switchRecoveryChannel('whatsapp')">WhatsApp</button>
             </div>
 
             <div id="recovery-step-request">
@@ -143,7 +143,7 @@
         <div class="login-box login-box--wide">
             <img class="login-logo login-logo--sm" src="assets/logo-vertical.png" alt="LUPPUS — find the signal">
             <h1 style="font-size: 20px;">criar conta</h1>
-            <p>cadastro inicial — sujeito a mudanças</p>
+            <p>Cadastro inicial — sujeito a mudanças</p>
             <input type="text" id="signup-name-input" placeholder="NOME COMPLETO">
             <input type="text" id="signup-company-input" placeholder="EMPRESA / CNPJ">
             <input type="text" id="signup-email-input" placeholder="E-MAIL">
@@ -220,7 +220,7 @@
             </button></li>
             <li><button type="button" class="menu-item" id="menu-relatorios" onclick="switchView('relatorios')">
                 <svg class="menu-icon" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                auditoria (smart)
+                auditoria
             </button></li>
             <li><button type="button" class="menu-item" id="menu-projecao" onclick="switchView('projecao')">
                 <svg class="menu-icon" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
@@ -258,13 +258,13 @@
     </div>
 
     <div class="main-wrapper" id="pdf-export-area">
-        <div id="demo-banner" class="demo-banner hide-on-pdf" style="display:none;">modo demonstração — dados de exemplo, nada é salvo</div>
+        <div id="demo-banner" class="demo-banner hide-on-pdf" style="display:none;">Modo demonstração — dados de exemplo, nada é salvo.</div>
         <!-- HEADER -->
         <div class="top-header hide-on-pdf">
             <div class="view-title">
                 <h2 id="current-view-title">visão geral</h2>
                 <div class="sync-status">
-                    <div class="sync-dot"></div> sincronizado
+                    <div class="sync-dot"></div> Sincronizado
                 </div>
             </div>
             <div class="company-controls">
@@ -305,7 +305,7 @@
                             <div class="quote-exchange"><span>FTSE 100</span><span class="quote-change negative">-0,12%</span></div>
                         </div>
                     </div>
-                    <p class="support-note">dados de exemplo — moedas e bolsas configuráveis em configurações › cliente. conectado à API de cotações pelo Kaike.</p>
+                    <p class="support-note">Dados de exemplo — moedas e bolsas configuráveis em Configurações › Cliente. Conectado à API de cotações pelo Kaike.</p>
                 </div>
                 <div class="dashboard-lower-grid">
                     <div class="panel-card">
@@ -456,7 +456,7 @@
 
                 <div class="panel-card">
                     <div class="panel-title">simular cenário</div>
-                    <p class="support-note" style="margin-top: 0; margin-bottom: 18px;">ajuste os campos abaixo para ver como mudanças futuras afetariam a projeção — não altera seus lançamentos reais.</p>
+                    <p class="support-note" style="margin-top: 0; margin-bottom: 18px;">Ajuste os campos abaixo para ver como mudanças futuras afetariam a projeção — não altera seus lançamentos reais.</p>
                     <div class="form-row">
                         <div class="form-group"><label>custo fixo extra por mês (R$)</label><input type="number" id="forecast-extra-cost" placeholder="0,00" oninput="updateForecasting()"></div>
                         <div class="form-group"><label>variação de receita (%)</label><input type="number" id="forecast-revenue-change" placeholder="0" oninput="updateForecasting()"></div>
@@ -475,15 +475,15 @@
                         <button class="outline-btn" style="padding: 6px 12px;" onclick="applySheetTemplate('estoque')">controle de estoque</button>
                         <button class="outline-btn" style="padding: 6px 12px;" onclick="applySheetTemplate('pagamentos')">cronograma de pagamentos</button>
                         <button class="outline-btn" style="padding: 6px 12px;" onclick="applySheetTemplate('recebimentos')">cronograma de recebimentos</button>
-                        <button class="outline-btn" style="padding: 6px 12px;" onclick="applySheetTemplate('fornecedores')">checklist de fornecedores</button>
+                        <button class="outline-btn" style="padding: 6px 12px;" onclick="applySheetTemplate('fornecedores')">checklist de fornecedores (lista de verificação)</button>
                         <button class="outline-btn" style="padding: 6px 12px;" onclick="applySheetTemplate('contratos')">controle de contratos</button>
                         <button class="outline-btn" style="padding: 6px 12px;" onclick="applySheetTemplate('planoContas')">plano de contas</button>
                         <button class="outline-btn" style="padding: 6px 12px;" onclick="applySheetTemplate('reembolsos')">reembolso de despesas</button>
-                        <button class="outline-btn" style="padding: 6px 12px;" onclick="applySheetTemplate('compliance')">checklist de compliance</button>
+                        <button class="outline-btn" style="padding: 6px 12px;" onclick="applySheetTemplate('compliance')">checklist de compliance (conformidade)</button>
                         <button class="outline-btn" style="padding: 6px 12px;" onclick="applySheetTemplate('ativos')">controle de ativos</button>
-                        <button class="outline-btn" style="padding: 6px 12px;" onclick="applySheetTemplate('onboarding')">onboarding de clientes</button>
+                        <button class="outline-btn" style="padding: 6px 12px;" onclick="applySheetTemplate('onboarding')">onboarding de clientes (integração)</button>
                     </div>
-                    <p class="support-note" style="margin-top: 14px;">aplica um modelo na planilha ativa, substituindo o conteúdo atual.</p>
+                    <p class="support-note" style="margin-top: 14px;">Aplica um modelo na planilha ativa, substituindo o conteúdo atual.</p>
                 </div>
 
                 <div class="panel-card">
@@ -534,7 +534,7 @@
                         </div>
                         <div class="panel-card">
                             <div class="panel-title">usar dados do sistema</div>
-                            <p class="support-note" style="margin-top: 0; margin-bottom: 18px;">analise direto os lançamentos que já estão no LUPPUS, sem precisar exportar e reimportar um CSV.</p>
+                            <p class="support-note" style="margin-top: 0; margin-bottom: 18px;">Analise direto os lançamentos que já estão no LUPPUS, sem precisar exportar e reimportar um CSV.</p>
                             <button class="action-btn" style="width: 100%;" onclick="loadSystemDataToBI()">usar lançamentos do sistema</button>
                         </div>
                     </div>
@@ -599,7 +599,7 @@
                                     <div class="settings-row-control"><input type="text" placeholder="voce@empresa.com"></div>
                                 </div>
                                 <div class="settings-row">
-                                    <div class="settings-row-label">whatsapp para contato</div>
+                                    <div class="settings-row-label">WhatsApp para contato</div>
                                     <div class="settings-row-control"><input type="text" placeholder="(00) 00000-0000"></div>
                                 </div>
                                 <div class="settings-row">
@@ -616,12 +616,12 @@
                                 </div>
                             </div>
                             <button class="outline-btn" style="margin-top: 20px;" disabled>salvar alterações</button>
-                            <p class="support-note">ainda não conectado — vinculado à sua conta quando o login por usuário estiver pronto.</p>
+                            <p class="support-note">Ainda não conectado — vinculado à sua conta quando o login por usuário estiver pronto.</p>
                         </div>
 
                         <div class="panel-card">
                             <div class="panel-title">cotações no painel</div>
-                            <p class="support-note" style="margin-top: 0; margin-bottom: 18px;">escolha até 3 moedas e a bolsa de valores associada a cada uma para exibir no painel.</p>
+                            <p class="support-note" style="margin-top: 0; margin-bottom: 18px;">Escolha até 3 moedas e a bolsa de valores associada a cada uma para exibir no painel.</p>
                             <div class="settings-list">
                                 <div class="settings-row">
                                     <div class="settings-row-label">moeda 1</div>
@@ -690,7 +690,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <p class="support-note">depende da API de cotações no backend — ainda não existe.</p>
+                            <p class="support-note">Depende da API de cotações no back-end — ainda não existe.</p>
                         </div>
 
                         <div class="panel-card">
@@ -706,7 +706,7 @@
                                 <input type="text" placeholder="Nova categoria" disabled>
                                 <button class="outline-btn" disabled>adicionar</button>
                             </div>
-                            <p class="support-note">personalize as categorias usadas nos lançamentos — em breve.</p>
+                            <p class="support-note">Personalize as categorias usadas nos lançamentos — em breve.</p>
                         </div>
 
                         <div class="panel-card">
@@ -729,11 +729,11 @@
                                     <div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" disabled><span class="toggle-slider"></span></label></div>
                                 </div>
                                 <div class="settings-row">
-                                    <div class="settings-row-label">relatório semanal por whatsapp</div>
+                                    <div class="settings-row-label">relatório semanal por WhatsApp</div>
                                     <div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" disabled><span class="toggle-slider"></span></label></div>
                                 </div>
                             </div>
-                            <p class="support-note">depende de um serviço de notificação/e-mail e whatsapp no backend — ainda não existe.</p>
+                            <p class="support-note">Depende de um serviço de notificação por e-mail e WhatsApp no back-end — ainda não existe.</p>
                         </div>
                     </div>
                 </div>
@@ -762,7 +762,7 @@
                                 </div>
                             </div>
                             <button class="outline-btn" style="margin-top: 20px;" disabled>salvar dados</button>
-                            <p class="support-note">campos da empresa ainda não conectados — placeholder visual.</p>
+                            <p class="support-note">Campos da empresa ainda não conectados — visual ilustrativo (placeholder).</p>
                         </div>
 
                         <div class="panel-card">
@@ -786,12 +786,12 @@
                                 <select disabled><option>papel: cliente</option><option>papel: empresa</option><option>papel: dev</option></select>
                             </div>
                             <button class="outline-btn" style="margin-top: 15px;" disabled>convidar pessoa</button>
-                            <p class="support-note">a separação por papéis (cliente / empresa / dev) ainda não é aplicada de verdade — essa tela já existe pronta pra quando a autenticação estiver funcionando.</p>
+                            <p class="support-note">A separação por papéis (cliente / empresa / dev) ainda não é aplicada de verdade — essa tela já existe pronta para quando a autenticação estiver funcionando.</p>
                         </div>
 
                         <div class="panel-card">
                             <div class="panel-title">histórico de alterações dos clientes</div>
-                            <p class="support-note" style="margin-top: 0; margin-bottom: 18px;">últimas mudanças feitas pelos clientes nos últimos 7 dias.</p>
+                            <p class="support-note" style="margin-top: 0; margin-bottom: 18px;">Últimas mudanças feitas pelos clientes nos últimos 7 dias.</p>
                             <div class="table-container">
                                 <table>
                                     <thead><tr><th>data</th><th>cliente</th><th>alteração</th></tr></thead>
@@ -804,7 +804,7 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <p class="support-note">exemplo ilustrativo — o registro de alterações reais depende do backend.</p>
+                            <p class="support-note">Exemplo ilustrativo — o registro de alterações reais depende do back-end.</p>
                         </div>
                     </div>
                 </div>
@@ -824,12 +824,12 @@
                                     <div class="settings-row-control"><input type="text" placeholder="meu-projeto-firebase" disabled></div>
                                 </div>
                                 <div class="settings-row">
-                                    <div class="settings-row-label">ambiente ativo<small>Útil pra testar mudanças sem afetar dados reais de cliente.</small></div>
+                                    <div class="settings-row-label">ambiente ativo<small>Útil para testar mudanças sem afetar dados reais de cliente.</small></div>
                                     <div class="settings-row-control"><select disabled><option>Produção</option><option>Homologação</option></select></div>
                                 </div>
                             </div>
                             <button class="outline-btn" style="margin-top: 20px;" disabled>salvar conexão</button>
-                            <p class="support-note">hoje isso é digitado na tela de login por qualquer pessoa — o certo é ficar fixo aqui, visível só pra quem tem papel dev.</p>
+                            <p class="support-note">Hoje isso é digitado na tela de login por qualquer pessoa — o certo é ficar fixo aqui, visível apenas para quem tem papel de desenvolvedor.</p>
                         </div>
 
                         <div class="panel-card">
@@ -852,7 +852,7 @@
                                     <div class="settings-row-control" style="color: var(--text-main); font-size: 13px;">99,98%</div>
                                 </div>
                             </div>
-                            <p class="support-note">exemplo ilustrativo — depende de um monitoramento real de infraestrutura, que ainda não existe.</p>
+                            <p class="support-note">Exemplo ilustrativo — depende de um monitoramento real de infraestrutura, que ainda não existe.</p>
                         </div>
 
                         <div class="panel-card">
@@ -864,7 +864,7 @@
                                 </li>
                             </ul>
                             <button class="outline-btn" disabled>gerar nova chave</button>
-                            <p class="support-note">pra integrações externas — ainda não existe.</p>
+                            <p class="support-note">Para integrações externas — ainda não existe.</p>
                         </div>
 
                         <div class="panel-card">
@@ -881,7 +881,7 @@
                                 <span class="chip">novo cliente cadastrado</span>
                             </div>
                             <button class="outline-btn" style="margin-top: 5px;" disabled>salvar webhook</button>
-                            <p class="support-note">ainda não existe no backend — o Kaike configura quais eventos disparam o envio.</p>
+                            <p class="support-note">Ainda não existe no back-end — o Kaike configura quais eventos disparam o envio.</p>
                         </div>
 
                         <div class="panel-card">
@@ -896,11 +896,11 @@
                                     <div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" disabled><span class="toggle-slider"></span></label></div>
                                 </div>
                                 <div class="settings-row">
-                                    <div class="settings-row-label">novo layout de forecasting<small>Versão em desenvolvimento da tela de projeção.</small></div>
+                                    <div class="settings-row-label">novo layout de forecasting (previsão)<small>Versão em desenvolvimento da tela de projeção.</small></div>
                                     <div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" disabled><span class="toggle-slider"></span></label></div>
                                 </div>
                             </div>
-                            <p class="support-note">testa funcionalidades novas sem afetar todos os clientes de uma vez — ainda não existe.</p>
+                            <p class="support-note">Testa funcionalidades novas sem afetar todos os clientes de uma vez — ainda não existe.</p>
                         </div>
 
                         <div class="panel-card">
@@ -909,7 +909,7 @@
                                 <li class="recent-item"><span class="recent-desc">Ana Beatriz alterou o papel de Carlos Souza</span><span style="color:var(--text-muted); font-size:11px;">2 dias atrás</span></li>
                                 <li class="recent-item"><span class="recent-desc">Novo cliente cadastrado: Cliente Aurora</span><span style="color:var(--text-muted); font-size:11px;">5 dias atrás</span></li>
                             </ul>
-                            <p class="support-note">exemplo ilustrativo — o registro de eventos reais ainda não existe.</p>
+                            <p class="support-note">Exemplo ilustrativo — o registro de eventos reais ainda não existe.</p>
                         </div>
 
                         <div class="panel-card">
@@ -919,7 +919,7 @@
                                 <li class="recent-item"><span class="recent-desc" style="color: var(--danger);">Erro ao gerar PDF do relatório</span><span style="color:var(--text-muted); font-size:11px;">3 horas atrás</span></li>
                                 <li class="recent-item"><span class="recent-desc">Reconexão automática bem-sucedida</span><span style="color:var(--text-muted); font-size:11px;">3 horas atrás</span></li>
                             </ul>
-                            <p class="support-note">exemplo ilustrativo — diferente do log de auditoria, esse seria só pra erros técnicos do sistema.</p>
+                            <p class="support-note">Exemplo ilustrativo — diferente do log de auditoria, esse seria apenas para erros técnicos do sistema.</p>
                         </div>
 
                         <div class="panel-card">
@@ -934,16 +934,16 @@
                                     <div class="settings-row-control" style="color: var(--text-main); font-size: 13px;">21/08/2026</div>
                                 </div>
                                 <div class="settings-row">
-                                    <div class="settings-row-label">documentação da api<small>Referência rápida pra quem for integrar ou dar manutenção.</small></div>
+                                    <div class="settings-row-label">documentação da api<small>Referência rápida para quem for integrar ou dar manutenção.</small></div>
                                     <div class="settings-row-control"><button class="outline-btn" disabled>abrir docs</button></div>
                                 </div>
                             </div>
-                            <p class="support-note">a documentação ainda não existe — esse card já fica pronto pra quando o Kaike escrever.</p>
+                            <p class="support-note">A documentação ainda não existe — este card já fica pronto para quando o Kaike escrever.</p>
                         </div>
 
                         <div class="panel-card" style="border-color: #331111;">
                             <div class="panel-title" style="color: var(--danger);">zona de perigo</div>
-                            <p class="support-note" style="margin-top: 0; margin-bottom: 18px;">essa ação apaga dados de verdade — por isso fica restrita à área dev, e não na área da empresa.</p>
+                            <p class="support-note" style="margin-top: 0; margin-bottom: 18px;">Essa ação apaga dados de verdade — por isso fica restrita à área de desenvolvedor, e não à área da empresa.</p>
                             <button class="danger-btn" onclick="openWipeModal()">expurgar dados</button>
                         </div>
                     </div>
@@ -993,7 +993,7 @@
                         <div class="flow-step">
                             <div class="flow-step-num">2</div>
                             <div class="flow-step-title">encontre o lançamento</div>
-                            <p>Na auditoria, use o atalho "pendentes" pra listar só esses.</p>
+                            <p>Na auditoria, use o atalho "pendentes" para listar só esses.</p>
                         </div>
                         <div class="flow-arrow" aria-hidden="true">→</div>
                         <div class="flow-step">
@@ -1039,9 +1039,9 @@
                         <button type="button" class="faq-tab active" data-tab="lancamentos" onclick="switchFaqTab('lancamentos')">lançamentos</button>
                         <button type="button" class="faq-tab" data-tab="auditoria" onclick="switchFaqTab('auditoria')">auditoria</button>
                         <button type="button" class="faq-tab" data-tab="cofre" onclick="switchFaqTab('cofre')">cofre digital</button>
-                        <button type="button" class="faq-tab" data-tab="workspaces" onclick="switchFaqTab('workspaces')">workspaces</button>
-                        <button type="button" class="faq-tab" data-tab="datastudio" onclick="switchFaqTab('datastudio')">data studio</button>
-                        <button type="button" class="faq-tab" data-tab="forecasting" onclick="switchFaqTab('forecasting')">forecasting</button>
+                        <button type="button" class="faq-tab" data-tab="workspaces" onclick="switchFaqTab('workspaces')">workspaces (planilhas)</button>
+                        <button type="button" class="faq-tab" data-tab="datastudio" onclick="switchFaqTab('datastudio')">data studio (dados)</button>
+                        <button type="button" class="faq-tab" data-tab="forecasting" onclick="switchFaqTab('forecasting')">forecasting (previsão)</button>
                         <button type="button" class="faq-tab" data-tab="painel" onclick="switchFaqTab('painel')">painel</button>
                         <button type="button" class="faq-tab" data-tab="acesso" onclick="switchFaqTab('acesso')">login e acesso</button>
                     </div>
@@ -1066,11 +1066,11 @@
                             </details>
                             <details class="faq-item">
                                 <summary>Meu comprovante não sobe / aparece um erro ao anexar.</summary>
-                                <p>O limite por arquivo é de 500KB — pequeno de propósito, pra não pesar o sistema. Se for uma foto ou PDF escaneado em alta resolução, ele passa desse limite. Tente um print em vez de foto, ou reduza a qualidade do arquivo antes de anexar.</p>
+                                <p>O limite por arquivo é de 500KB — pequeno de propósito, para não pesar o sistema. Se for uma foto ou PDF escaneado em alta resolução, ele passa desse limite. Tente um print em vez de foto, ou reduza a qualidade do arquivo antes de anexar.</p>
                             </details>
                             <details class="faq-item">
                                 <summary>Importei um extrato bancário (OFX) mas os lançamentos não apareceram sozinhos.</summary>
-                                <p>A importação de OFX só lê o arquivo e monta uma fila de lançamentos pendentes. Clique em "validar" em cada item — isso preenche o formulário com os dados do banco. Depois de lançar um item validado, o próximo da fila já é carregado automaticamente, pra agilizar quando tiver vários de uma vez.</p>
+                                <p>A importação de OFX só lê o arquivo e monta uma fila de lançamentos pendentes. Clique em "validar" em cada item — isso preenche o formulário com os dados do banco. Depois de lançar um item validado, o próximo da fila já é carregado automaticamente, para agilizar quando tiver vários de uma vez.</p>
                             </details>
                         </div>
                     </div>
@@ -1086,16 +1086,16 @@
                                 <p>Clique no nome da coluna, no cabeçalho da tabela — uma seta indica se está crescente ou decrescente. Clicar de novo na mesma coluna inverte a ordem.</p>
                             </details>
                             <details class="faq-item">
-                                <summary>Dá pra baixar só os lançamentos que eu filtrei?</summary>
+                                <summary>Dá para baixar só os lançamentos que eu filtrei?</summary>
                                 <p>Sim. O botão "baixar csv", ao lado do título "livro razão completo", exporta exatamente o que está filtrado e ordenado na tela naquele momento — não a lista inteira.</p>
                             </details>
                             <details class="faq-item">
                                 <summary>O que os chips "só receitas", "últimos 30 dias" e "pendentes" fazem?</summary>
-                                <p>São atalhos pra não precisar digitar na busca: aplicam o filtro na hora. "Pendentes" mostra só os lançamentos sem comprovante — útil pra encontrar rápido o que falta resolver.</p>
+                                <p>São atalhos para não precisar digitar na busca: aplicam o filtro na hora. "Pendentes" mostra só os lançamentos sem comprovante — útil para encontrar rápido o que falta resolver.</p>
                             </details>
                             <details class="faq-item">
                                 <summary>Como funciona a busca inteligente (Luppus AI)?</summary>
-                                <p>É um filtro de texto que entende alguns termos naturais, não uma inteligência artificial completa. Digite "receitas" ou "entradas" pra ver só o que entrou, "custos" ou "saídas" pra ver só o que saiu, ou parte de uma descrição (tipo "aws" ou "consultoria") pra filtrar por isso.</p>
+                                <p>É um filtro de texto que entende alguns termos naturais, não uma inteligência artificial completa. Digite "receitas" ou "entradas" para ver só o que entrou, "custos" ou "saídas" para ver só o que saiu, ou parte de uma descrição (tipo "aws" ou "consultoria") para filtrar por isso.</p>
                             </details>
                         </div>
                     </div>
@@ -1107,7 +1107,7 @@
                                 <p>Cada documento com data de validade preenchida ganha uma etiqueta colorida: verde ("válido até"), dourada ("vence em X dias", quando faltam 30 dias ou menos) ou vermelha ("vencido"). O painel também mostra um aviso com a contagem de documentos vencendo nos próximos 30 dias.</p>
                             </details>
                             <details class="faq-item">
-                                <summary>Dá pra ver o documento sem precisar baixar?</summary>
+                                <summary>Dá para ver o documento sem precisar baixar?</summary>
                                 <p>Sim. Clique no ícone de olho ao lado do documento — abre uma pré-visualização na tela (funciona para imagens e PDFs). Pra outros formatos, use o "download" normal.</p>
                             </details>
                             <details class="faq-item">
@@ -1121,19 +1121,19 @@
                         <div class="faq-list">
                             <details class="faq-item">
                                 <summary>Posso ter mais de uma planilha por cliente?</summary>
-                                <p>Sim. Use o "+" ao lado das abas de planilha pra criar uma nova, dê um nome, e alterne entre elas clicando na aba. Cada uma salva separadamente.</p>
+                                <p>Sim. Use o "+" ao lado das abas de planilha para criar uma nova, dê um nome, e alterne entre elas clicando na aba. Cada uma salva separadamente.</p>
                             </details>
                             <details class="faq-item">
                                 <summary>Existe algum modelo pronto de planilha?</summary>
-                                <p>Sim, no card "modelos prontos": controle de estoque, cronograma de pagamentos e recebimentos, contratos, plano de contas, reembolsos, compliance, ativos e onboarding de clientes. Aplicar um modelo substitui o conteúdo da planilha que estiver aberta.</p>
+                                <p>Sim, no card "modelos prontos": controle de estoque, cronograma de pagamentos e recebimentos, contratos, plano de contas, reembolsos, compliance (conformidade), ativos e onboarding (integração) de clientes. Aplicar um modelo substitui o conteúdo da planilha que estiver aberta.</p>
                             </details>
                             <details class="faq-item">
-                                <summary>Salvei algo errado na planilha, dá pra desfazer?</summary>
-                                <p>O botão "desfazer" volta a planilha ativa pro estado do salvamento anterior — funciona um nível pra trás, então use logo depois de perceber o erro.</p>
+                                <summary>Salvei algo errado na planilha, dá para desfazer?</summary>
+                                <p>O botão "desfazer" volta a planilha ativa para o estado do salvamento anterior — funciona um nível para trás, então use logo depois de perceber o erro.</p>
                             </details>
                             <details class="faq-item">
                                 <summary>Como insiro uma linha de total automática?</summary>
-                                <p>O botão "inserir total" soma os valores numéricos de cada coluna (ignorando a primeira, geralmente usada pro nome do item) e adiciona uma linha "Total" no fim da planilha.</p>
+                                <p>O botão "inserir total" soma os valores numéricos de cada coluna (ignorando a primeira, geralmente usada para o nome do item) e adiciona uma linha "Total" no fim da planilha.</p>
                             </details>
                         </div>
                     </div>
@@ -1141,15 +1141,15 @@
                     <div id="faq-tab-datastudio" class="faq-tab-panel">
                         <div class="faq-list">
                             <details class="faq-item">
-                                <summary>Preciso subir um CSV toda vez pra analisar meus dados?</summary>
-                                <p>Não — o card "usar dados do sistema" analisa direto os lançamentos que já estão no LUPPUS, sem precisar exportar e reimportar nada. O upload de CSV continua disponível pra dados externos.</p>
+                                <summary>Preciso subir um CSV toda vez para analisar meus dados?</summary>
+                                <p>Não — o card "usar dados do sistema" analisa direto os lançamentos que já estão no LUPPUS, sem precisar exportar e reimportar nada. O upload de CSV continua disponível para dados externos.</p>
                             </details>
                             <details class="faq-item">
-                                <summary>O que é "agregação" e pra que serve o filtro?</summary>
+                                <summary>O que é "agregação" e para que serve o filtro?</summary>
                                 <p>Agregação é como os valores são somados por grupo: soma, média, contagem, máximo ou mínimo. O filtro (coluna + valor) restringe quais linhas entram na conta antes de agregar — por exemplo, só a categoria "custo".</p>
                             </details>
                             <details class="faq-item">
-                                <summary>Dá pra baixar o gráfico que eu criei?</summary>
+                                <summary>Dá para baixar o gráfico que eu criei?</summary>
                                 <p>Sim, o botão "baixar gráfico" no canto do "canvas de análise" exporta a visualização atual como imagem PNG.</p>
                             </details>
                         </div>
@@ -1176,15 +1176,15 @@
                         <div class="faq-list">
                             <details class="faq-item">
                                 <summary>O que são os avisos de pendências e documentos vencendo?</summary>
-                                <p>São alertas que resumem o que precisa de atenção: lançamentos sem comprovante (que não contam nos totais) e documentos do cofre vencendo nos próximos 30 dias. Clicar em cada um leva direto pra tela correspondente, já filtrada.</p>
+                                <p>São alertas que resumem o que precisa de atenção: lançamentos sem comprovante (que não contam nos totais) e documentos do cofre vencendo nos próximos 30 dias. Clicar em cada um leva direto para a tela correspondente, já filtrada.</p>
                             </details>
                             <details class="faq-item">
                                 <summary>As cotações de moeda são em tempo real?</summary>
-                                <p>Ainda não — hoje são dados de exemplo. As moedas e bolsas exibidas são configuráveis em Configurações › cliente, e a conexão com uma API de cotações real está prevista pra quando o back-end estiver pronto.</p>
+                                <p>Ainda não — hoje são dados de exemplo. As moedas e bolsas exibidas são configuráveis em Configurações › cliente, e a conexão com uma API de cotações real está prevista para quando o back-end estiver pronto.</p>
                             </details>
                             <details class="faq-item">
                                 <summary>Como funciona o gráfico de gastos por categoria?</summary>
-                                <p>Soma os custos já contabilizados (com comprovante) por categoria, e mostra ao lado o valor, o percentual do total e quantos lançamentos formam cada categoria — do maior pro menor gasto.</p>
+                                <p>Soma os custos já contabilizados (com comprovante) por categoria, e mostra ao lado o valor, o percentual do total e quantos lançamentos formam cada categoria — do maior para o menor gasto.</p>
                             </details>
                             <details class="faq-item">
                                 <summary>Como exporto um relatório em PDF?</summary>
@@ -1196,12 +1196,12 @@
                     <div id="faq-tab-acesso" class="faq-tab-panel">
                         <div class="faq-list">
                             <details class="faq-item">
-                                <summary>Qual aba eu uso pra entrar — empresa, cliente ou desenvolvedor?</summary>
-                                <p><strong>Empresa</strong> e <strong>cliente</strong> são login por e-mail e senha (ainda não conectado a um sistema real de contas). <strong>Desenvolvedor</strong> é pra quem tem as credenciais do Firebase do projeto — é essa aba que realmente acessa o sistema hoje, enquanto o login por senha não está pronto.</p>
+                                <summary>Qual aba eu uso para entrar — empresa, cliente ou desenvolvedor?</summary>
+                                <p><strong>Empresa</strong> e <strong>cliente</strong> são login por e-mail e senha (ainda não conectado a um sistema real de contas). <strong>Desenvolvedor</strong> é para quem tem as credenciais do Firebase do projeto — é essa aba que realmente acessa o sistema hoje, enquanto o login por senha não está pronto.</p>
                             </details>
                             <details class="faq-item">
                                 <summary>Esqueci minha senha, como recupero?</summary>
-                                <p>Clique em "esqueceu a senha?" na tela de login, escolha receber o código por e-mail ou WhatsApp (veja o fluxograma acima). Esse fluxo ainda não está conectado a um serviço real de envio — a tela já está pronta pra quando estiver.</p>
+                                <p>Clique em "esqueceu a senha?" na tela de login, escolha receber o código por e-mail ou WhatsApp (veja o fluxograma acima). Esse fluxo ainda não está conectado a um serviço real de envio — a tela já está pronta para quando estiver.</p>
                             </details>
                             <details class="faq-item">
                                 <summary>Como crio uma conta nova?</summary>
@@ -1213,7 +1213,7 @@
                             </details>
                             <details class="faq-item">
                                 <summary>Não vejo alguns botões que outras pessoas da equipe veem.</summary>
-                                <p>Provavelmente sua conta está em modo cliente (acesso restrito) — isso é intencional, não um erro. Quem acessa em modo administrativo vê todos os botões; o modo restrito mostra só o que é preciso pra acompanhar os números.</p>
+                                <p>Provavelmente sua conta está em modo cliente (acesso restrito) — isso é intencional, não um erro. Quem acessa em modo administrativo vê todos os botões; o modo restrito mostra só o que é preciso para acompanhar os números.</p>
                             </details>
                             <details class="faq-item">
                                 <summary>Meus dados financeiros estão seguros?</summary>
@@ -1238,7 +1238,7 @@
                                 <a href="tel:+551100000000">+55 (11) 0000-0000</a>
                             </li>
                         </ul>
-                        <p class="support-note">e-mail e telefone de exemplo — substitua pelos dados reais de contato.</p>
+                        <p class="support-note">E-mail e telefone de exemplo — substitua pelos dados reais de contato.</p>
                     </div>
 
                     <div class="panel-card">
@@ -1252,7 +1252,7 @@
                                 <button class="action-btn" type="button" disabled>enviar</button>
                             </div>
                         </div>
-                        <p class="support-note">chat ainda não conectado — placeholder visual.</p>
+                        <p class="support-note">Chat ainda não conectado — visual ilustrativo (placeholder).</p>
                     </div>
                 </div>
             </div>

@@ -174,7 +174,7 @@
             const email = document.getElementById(role + '-email-input').value.trim();
             const password = document.getElementById(role + '-password-input').value.trim();
             if(!email || !password) { showLoginError('Preencha e-mail e senha.'); return; }
-            showLoginError('Login por e-mail e senha ainda não está conectado ao backend.<br>Use "ver demonstração" abaixo, ou acesse pela aba desenvolvedor enquanto isso.');
+            showLoginError('Login por e-mail e senha ainda não está conectado ao back-end.<br>Use "ver demonstração" abaixo, ou acesse pela aba desenvolvedor enquanto isso.');
         }
 
         let recoveryChannel = 'email';
@@ -199,17 +199,17 @@
             recoveryChannel = channel;
             document.getElementById('recovery-tab-email').classList.toggle('active', channel === 'email');
             document.getElementById('recovery-tab-whatsapp').classList.toggle('active', channel === 'whatsapp');
-            document.getElementById('recovery-contact-input').placeholder = channel === 'email' ? 'seu e-mail cadastrado' : 'seu whatsapp cadastrado';
+            document.getElementById('recovery-contact-input').placeholder = channel === 'email' ? 'Seu e-mail cadastrado' : 'Seu WhatsApp cadastrado';
         }
         function sendRecoveryCode() {
             const contact = document.getElementById('recovery-contact-input').value.trim();
             if(!contact) { showToast('Preencha o campo de contato.'); return; }
             document.getElementById('recovery-step-request').style.display = 'none';
             document.getElementById('recovery-step-verify').style.display = 'block';
-            document.getElementById('recovery-sent-note').textContent = `envio de código por ${recoveryChannel === 'email' ? 'e-mail' : 'whatsapp'} ainda não está conectado a um serviço real — essa tela já fica pronta pra quando o backend existir.`;
+            document.getElementById('recovery-sent-note').textContent = `Envio de código por ${recoveryChannel === 'email' ? 'e-mail' : 'WhatsApp'} ainda não está conectado a um serviço real — essa tela já fica pronta para quando o back-end existir.`;
         }
         function verifyRecoveryCode() {
-            showToast('Verificação de código ainda não está conectada ao backend.');
+            showToast('Verificação de código ainda não está conectada ao back-end.');
         }
 
         function openSignup() {
@@ -221,7 +221,7 @@
             document.getElementById('login-overlay').style.display = 'flex';
         }
         function doSignup() {
-            showToast('Cadastro ainda não está conectado ao backend — aguardando integração com o Kaike.');
+            showToast('Cadastro ainda não está conectado ao back-end — aguardando integração com o Kaike.');
         }
 
         function startDemo() {
@@ -484,7 +484,7 @@
             const activeView = document.getElementById('view-' + viewId);
             if(activeView) activeView.classList.add('active');
 
-            const titles = { 'painel': 'visão geral', 'lancamentos': 'lançamentos', 'relatorios': 'auditoria smart', 'projecao':'forecasting algorítmico', 'planilhas': 'workspaces', 'bi': 'data studio', 'cofre': 'cofre corporativo', 'config': 'configurações', 'suporte': 'suporte' };
+            const titles = { 'painel': 'visão geral', 'lancamentos': 'lançamentos', 'relatorios': 'auditoria', 'projecao':'forecasting (previsão)', 'planilhas': 'workspaces (planilhas)', 'bi': 'data studio (dados)', 'cofre': 'cofre corporativo', 'config': 'configurações', 'suporte': 'suporte' };
             document.getElementById('current-view-title').innerText = titles[viewId] || 'painel';
 
             if(viewId === 'planilhas') initSpreadsheet();
