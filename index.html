@@ -311,29 +311,35 @@
             <div id="view-bi" class="view-section">
                 <div class="mobile-warning">O motor de BI é melhor visualizado em telas grandes.</div>
                 <div class="dashboard-lower-grid">
-                    <div class="panel-card">
-                        <div class="panel-title">importação de dados</div>
-                        <input type="file" id="bi-csv" accept=".csv" style="margin-bottom: 15px;" onchange="handleCSVUpload()">
-                        <button class="outline-btn" style="width: 100%; margin-bottom: 5px;" onclick="loadSystemDataToBI()">usar lançamentos do sistema</button>
-                        <div id="bi-controls" style="display: none; margin-top: 20px;">
-                            <div class="form-group"><label>Eixo X (Agrupador)</label><select id="bi-x" onchange="updateBIChart()"></select></div>
-                            <div class="form-group"><label>Eixo Y (Valor)</label><select id="bi-y" onchange="updateBIChart()"></select></div>
-                            <div class="form-row">
-                                <div class="form-group"><label>Agregação</label>
-                                    <select id="bi-agg" onchange="updateBIChart()">
-                                        <option value="sum">Soma</option><option value="avg">Média</option><option value="count">Contagem</option><option value="max">Máximo</option><option value="min">Mínimo</option>
-                                    </select>
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <div class="panel-card">
+                            <div class="panel-title">importação de dados</div>
+                            <input type="file" id="bi-csv" accept=".csv" style="margin-bottom: 15px;" onchange="handleCSVUpload()">
+                            <div id="bi-controls" style="display: none; margin-top: 20px;">
+                                <div class="form-group"><label>Eixo X (Agrupador)</label><select id="bi-x" onchange="updateBIChart()"></select></div>
+                                <div class="form-group"><label>Eixo Y (Valor)</label><select id="bi-y" onchange="updateBIChart()"></select></div>
+                                <div class="form-row">
+                                    <div class="form-group"><label>Agregação</label>
+                                        <select id="bi-agg" onchange="updateBIChart()">
+                                            <option value="sum">Soma</option><option value="avg">Média</option><option value="count">Contagem</option><option value="max">Máximo</option><option value="min">Mínimo</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group"><label>Tipo de Gráfico</label>
+                                        <select id="bi-type" onchange="updateBIChart()">
+                                            <option value="bar">Barras</option><option value="line">Linhas</option><option value="pie">Pizza</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="form-group"><label>Tipo de Gráfico</label>
-                                    <select id="bi-type" onchange="updateBIChart()">
-                                        <option value="bar">Barras</option><option value="line">Linhas</option><option value="pie">Pizza</option>
-                                    </select>
+                                <div class="form-row">
+                                    <div class="form-group"><label>Filtrar coluna</label><select id="bi-filter-col" onchange="updateBIFilterValues()"><option value="">nenhum</option></select></div>
+                                    <div class="form-group"><label>Valor do filtro</label><select id="bi-filter-value" onchange="updateBIChart()" disabled><option value="">todos</option></select></div>
                                 </div>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group"><label>Filtrar coluna</label><select id="bi-filter-col" onchange="updateBIFilterValues()"><option value="">nenhum</option></select></div>
-                                <div class="form-group"><label>Valor do filtro</label><select id="bi-filter-value" onchange="updateBIChart()" disabled><option value="">todos</option></select></div>
-                            </div>
+                        </div>
+                        <div class="panel-card">
+                            <div class="panel-title">usar dados do sistema</div>
+                            <p class="support-note" style="margin-top: 0; margin-bottom: 18px;">analise direto os lançamentos que já estão no LUPPUS, sem precisar exportar e reimportar um CSV.</p>
+                            <button class="action-btn" style="width: 100%;" onclick="loadSystemDataToBI()">usar lançamentos do sistema</button>
                         </div>
                     </div>
                     <div class="panel-card">
