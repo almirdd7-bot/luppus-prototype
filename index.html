@@ -187,11 +187,13 @@
             
             <!-- VIEW 1: PAINEL -->
             <div id="view-painel" class="view-section active">
-                <div class="kpi-grid">
+                <div class="kpi-grid kpi-grid-4">
                     <div class="kpi-card"><div class="kpi-title">receita</div><div class="kpi-value positive" id="total-in">R$ 0,00</div></div>
                     <div class="kpi-card"><div class="kpi-title">custos</div><div class="kpi-value negative" id="total-out">R$ 0,00</div></div>
                     <div class="kpi-card"><div class="kpi-title">resultado líquido</div><div class="kpi-value" id="net-cash">R$ 0,00</div></div>
+                    <div class="kpi-card"><div class="kpi-title">saldo projetado (30d)</div><div class="kpi-value" id="painel-forecast-30">R$ 0,00</div></div>
                 </div>
+                <div class="painel-alerts-grid hide-on-pdf" id="painel-alerts-grid" style="margin-bottom: 20px;"></div>
                 <div class="panel-card" style="margin-bottom: 20px;">
                     <div class="panel-title">cotações do dia</div>
                     <div class="quotes-grid">
@@ -224,6 +226,13 @@
                             <button class="outline-btn hide-on-pdf" style="padding: 4px 10px; font-size: 10px;" onclick="switchView('relatorios')">ver tudo</button>
                         </div>
                         <ul class="recent-list" id="recent-transactions-list"></ul>
+                    </div>
+                </div>
+                <div class="panel-card" style="margin-top: 20px;">
+                    <div class="panel-title">gastos por categoria</div>
+                    <div class="chart-container" style="height: 260px;">
+                        <p id="category-chart-empty" class="empty-state">Nenhum custo categorizado e contabilizado ainda.</p>
+                        <canvas id="categoryChart" style="display: none;"></canvas>
                     </div>
                 </div>
             </div>

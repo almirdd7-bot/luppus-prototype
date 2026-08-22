@@ -135,9 +135,20 @@
         .kpi-value { font-size: 34px; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; }
         .kpi-value.positive { color: var(--success); }
         .kpi-value.negative { color: var(--danger); }
+        .kpi-grid-4 .kpi-value { font-size: 27px; }
 
         .dashboard-lower-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 20px; }
         @media (max-width: 1100px) { .dashboard-lower-grid { grid-template-columns: 1fr; } }
+
+        .painel-alerts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+        .painel-alert-item { display: flex; align-items: center; gap: 14px; background-color: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); cursor: pointer; text-align: left; font-family: 'Inter', sans-serif; transition: 0.2s; width: 100%; }
+        .painel-alert-item:hover { border-color: var(--gold); }
+        .painel-alert-item.has-issues { border-color: rgba(240, 108, 108, 0.35); }
+        .painel-alert-icon { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: rgba(57, 212, 119, 0.1); color: var(--success); }
+        .painel-alert-item.has-issues .painel-alert-icon { background: rgba(240, 108, 108, 0.1); color: var(--danger); }
+        .painel-alert-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+        .painel-alert-text strong { color: var(--text-main); font-size: 14px; font-weight: 600; }
+        .painel-alert-text span { color: var(--text-muted); font-size: 11px; }
 
         .quotes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
         .quote-card { background-color: var(--bg-main); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px 18px; }

@@ -12,6 +12,7 @@
         let chartInstance = null;
         let biChartInstance = null;
         let forecastChartInstance = null;
+        let categoryChartInstance = null;
         let cloudDB = null;
         let pendingOFX = [];
         let filterTimeout;
@@ -540,6 +541,9 @@
             }
             updateChart(totalIn, totalOut);
             if(document.getElementById('view-projecao').classList.contains('active')) updateForecasting();
+            updatePainelAlerts();
+            updatePainelCategoryChart();
+            updatePainelForecastSummary();
         }
 
         function updateChart(totalIn, totalOut) {
@@ -553,6 +557,101 @@
                 data: { labels: ['Volume'], datasets: [{ label: 'Receitas', data: [totalIn], backgroundColor: verticalGradient(ctx, '--success', 260, 0.9, 0.25), borderRadius: 2 }, { label: 'Custos', data: [totalOut], backgroundColor: verticalGradient(ctx, '--danger', 260, 0.9, 0.25), borderRadius: 2 }] },
                 options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { y: { beginAtZero: true, grid: {color: cssVar('--border'), drawBorder: false} }, x: { display: false, grid: {display: false} } }, plugins: { legend: { display: false } } }
             });
+        }
+
+        // --- PAINEL: ALERTAS, CATEGORIAS E RESUMO DE PROJEÇÃO ---
+        function goToPendingTransactions() {
+            switchView('relatorios');
+            auditNoAttachmentOnly = true;
+            const chip = document.getElementById('audit-chip-no-attachment');
+            if(chip) chip.classList.add('active');
+            runAuditFilter();
+        }
+
+        function updatePainelAlerts() {
+            const container = document.getElementById('painel-alerts-grid');
+            if(!container) return;
+
+            const currentTx = appDB.transactions[appDB.currentCompanyId] || [];
+            const pendingCount = currentTx.filter(t => !t.receipt).length;
+
+            const docs = (appDB.vault && appDB.vault[appDB.currentCompanyId]) ? appDB.vault[appDB.currentCompanyId] : [];
+            const today = new Date(); today.setHours(0,0,0,0);
+            let expiringCount = 0;
+            docs.forEach(d => {
+                const expDate = parseBRDate(d.expiry);
+                if(!expDate) return;
+                const diffDays = Math.round((expDate - today) / 86400000);
+                if(diffDays <= 30) expiringCount++;
+            });
+
+            const pendingClass = pendingCount > 0 ? 'has-issues' : '';
+            const expiringClass = expiringCount > 0 ? 'has-issues' : '';
+
+            container.innerHTML = `
+                <button type="button" class="painel-alert-item ${pendingClass}" onclick="goToPendingTransactions()">
+                    <span class="painel-alert-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></span>
+                    <span class="painel-alert-text"><strong>${pendingCount} lançamento${pendingCount === 1 ? '' : 's'} pendente${pendingCount === 1 ? '' : 's'}</strong><span>${pendingCount > 0 ? 'aguardando comprovante — não contam nos totais' : 'tudo contabilizado'}</span></span>
+                </button>
+                <button type="button" class="painel-alert-item ${expiringClass}" onclick="switchView('cofre')">
+                    <span class="painel-alert-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span>
+                    <span class="painel-alert-text"><strong>${expiringCount} documento${expiringCount === 1 ? '' : 's'} vencendo</strong><span>${expiringCount > 0 ? 'nos próximos 30 dias' : 'nenhum vencimento próximo'}</span></span>
+                </button>
+            `;
+        }
+
+        function updatePainelCategoryChart() {
+            const canvas = document.getElementById('categoryChart');
+            const emptyEl = document.getElementById('category-chart-empty');
+            if(!canvas) return;
+
+            const currentTx = appDB.transactions[appDB.currentCompanyId] || [];
+            const grouped = {};
+            currentTx.forEach(t => {
+                if(!t.receipt || t.type !== 'out') return;
+                const cat = t.category || 'Sem categoria';
+                grouped[cat] = (grouped[cat] || 0) + t.amount;
+            });
+            const labels = Object.keys(grouped);
+
+            if(labels.length === 0) {
+                if(emptyEl) emptyEl.style.display = 'block';
+                canvas.style.display = 'none';
+                if(categoryChartInstance) { categoryChartInstance.destroy(); categoryChartInstance = null; }
+                return;
+            }
+            if(emptyEl) emptyEl.style.display = 'none';
+            canvas.style.display = 'block';
+
+            const ctx = canvas.getContext('2d');
+            if(categoryChartInstance) categoryChartInstance.destroy();
+            categoryChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels: labels, datasets: [{ data: Object.values(grouped), backgroundColor: categoricalPalette(labels.length), borderColor: cssVar('--card-bg'), borderWidth: 2 }] },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: true, position: 'right', labels: { color: cssVar('--text-muted'), font: { size: 11 }, boxWidth: 12 } } } }
+            });
+        }
+
+        function updatePainelForecastSummary() {
+            const el = document.getElementById('painel-forecast-30');
+            if(!el) return;
+            const currentTx = (appDB.transactions[appDB.currentCompanyId] || []).filter(t => t.receipt);
+            if(currentTx.length === 0) { el.textContent = 'R$ 0,00'; el.style.color = ''; return; }
+
+            let totalIn = 0, totalOut = 0, oldestDate = null;
+            currentTx.forEach(t => {
+                if(t.type === 'in') totalIn += t.amount; else totalOut += t.amount;
+                const d = parseBRDate(t.date);
+                if(d && (!oldestDate || d < oldestDate)) oldestDate = d;
+            });
+            const currentCash = totalIn - totalOut;
+            const today = new Date(); today.setHours(0,0,0,0);
+            const daysCovered = oldestDate ? Math.max(1, Math.round((today - oldestDate) / 86400000)) : 1;
+            const dailyNet = (totalIn - totalOut) / daysCovered;
+            const projected = currentCash + dailyNet * 30;
+
+            el.textContent = `R$ ${projected.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            el.style.color = projected >= 0 ? 'var(--success)' : 'var(--danger)';
         }
 
         // --- MOTOR DE PREVISIBILIDADE (FORECASTING) ---
@@ -700,7 +799,7 @@
             ul.innerHTML = '';
             const allDocs = (appDB.vault && appDB.vault[appDB.currentCompanyId]) ? appDB.vault[appDB.currentCompanyId] : [];
 
-            if(allDocs.length === 0) { ul.innerHTML = '<li class="empty-state">Nenhum documento no cofre ainda.</li>'; return; }
+            if(allDocs.length === 0) { ul.innerHTML = '<li class="empty-state">Nenhum documento no cofre ainda.</li>'; updatePainelAlerts(); return; }
 
             const searchEl = document.getElementById('vault-search');
             const query = searchEl ? searchEl.value.trim().toLowerCase() : '';
@@ -730,6 +829,7 @@
             });
 
             if(matchCount === 0) { ul.innerHTML = '<li class="empty-state">Nenhum documento encontrado.</li>'; }
+            updatePainelAlerts();
         }
 
         function openFilePreview(title, fileObj) {
