@@ -299,12 +299,12 @@
 
                     loadingOverlay.style.display = 'flex';
                     loadingOverlay.classList.add('overlay-fade-in');
-                    setTimeout(() => loadingOverlay.classList.remove('overlay-fade-in'), 350);
+                    setTimeout(() => loadingOverlay.classList.remove('overlay-fade-in'), 600);
 
                     applyClientModeUI();
                     setTimeout(() => { initFirebase(config); }, 100);
-                }, 300);
-            }, 450);
+                }, 600);
+            }, 1300);
         }
 
         function doLogout() {
