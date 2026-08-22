@@ -553,11 +553,6 @@
                             <p class="support-note">a separação por papéis (cliente / empresa / dev) ainda não é aplicada de verdade — essa tela já existe pronta pra quando a autenticação estiver funcionando.</p>
                         </div>
 
-                        <div class="panel-card" style="border-color: #331111;">
-                            <div class="panel-title" style="color: var(--danger);">zona de perigo</div>
-                            <button class="danger-btn" onclick="openWipeModal()">expurgar dados</button>
-                        </div>
-
                         <div class="panel-card">
                             <div class="panel-title">histórico de alterações dos clientes</div>
                             <p class="support-note" style="margin-top: 0; margin-bottom: 18px;">últimas mudanças feitas pelos clientes nos últimos 7 dias.</p>
@@ -620,6 +615,12 @@
                                 <li class="recent-item"><span class="recent-desc">Novo cliente cadastrado: Cliente Aurora</span><span style="color:var(--text-muted); font-size:11px;">5 dias atrás</span></li>
                             </ul>
                             <p class="support-note">exemplo ilustrativo — o registro de eventos reais ainda não existe.</p>
+                        </div>
+
+                        <div class="panel-card" style="border-color: #331111;">
+                            <div class="panel-title" style="color: var(--danger);">zona de perigo</div>
+                            <p class="support-note" style="margin-top: 0; margin-bottom: 18px;">essa ação apaga dados de verdade — por isso fica restrita à área dev, e não na área da empresa.</p>
+                            <button class="danger-btn" onclick="openWipeModal()">expurgar dados</button>
                         </div>
                     </div>
                 </div>
