@@ -99,6 +99,83 @@
             if(entryDateEl) entryDateEl.value = getTodayDate();
         }
 
+        // --- LOGIN: ABAS, SENHA, RECUPERAÇÃO E CADASTRO ---
+        function switchLoginTab(tab) {
+            document.querySelectorAll('.login-tab').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.login-tab-panel').forEach(el => el.classList.remove('active'));
+            const tabBtn = document.querySelector(`.login-tab[data-tab="${tab}"]`);
+            if(tabBtn) tabBtn.classList.add('active');
+            const panel = document.getElementById('login-panel-' + tab);
+            if(panel) panel.classList.add('active');
+            const errEl = document.getElementById('login-error');
+            if(errEl) errEl.style.display = 'none';
+        }
+
+        function togglePasswordVisibility(inputId, btnEl) {
+            const input = document.getElementById(inputId);
+            if(!input) return;
+            const willShow = input.type === 'password';
+            input.type = willShow ? 'text' : 'password';
+            btnEl.setAttribute('aria-label', willShow ? 'ocultar' : 'mostrar');
+            btnEl.innerHTML = willShow
+                ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>'
+                : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+        }
+
+        function doPasswordLogin(role) {
+            const email = document.getElementById(role + '-email-input').value.trim();
+            const password = document.getElementById(role + '-password-input').value.trim();
+            if(!email || !password) { showLoginError('Preencha e-mail e senha.'); return; }
+            showLoginError('Login por e-mail e senha ainda não está conectado ao backend.<br>Use "ver demonstração" abaixo, ou acesse pela aba desenvolvedor enquanto isso.');
+        }
+
+        let recoveryChannel = 'email';
+        function openForgotPassword() {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('forgot-password-overlay').style.display = 'flex';
+            resetRecoveryFlow();
+        }
+        function closeForgotPassword() {
+            document.getElementById('forgot-password-overlay').style.display = 'none';
+            document.getElementById('login-overlay').style.display = 'flex';
+            resetRecoveryFlow();
+        }
+        function resetRecoveryFlow() {
+            document.getElementById('recovery-step-request').style.display = 'block';
+            document.getElementById('recovery-step-verify').style.display = 'none';
+            document.getElementById('recovery-contact-input').value = '';
+            document.getElementById('recovery-code-input').value = '';
+            switchRecoveryChannel('email');
+        }
+        function switchRecoveryChannel(channel) {
+            recoveryChannel = channel;
+            document.getElementById('recovery-tab-email').classList.toggle('active', channel === 'email');
+            document.getElementById('recovery-tab-whatsapp').classList.toggle('active', channel === 'whatsapp');
+            document.getElementById('recovery-contact-input').placeholder = channel === 'email' ? 'seu e-mail cadastrado' : 'seu whatsapp cadastrado';
+        }
+        function sendRecoveryCode() {
+            const contact = document.getElementById('recovery-contact-input').value.trim();
+            if(!contact) { showToast('Preencha o campo de contato.'); return; }
+            document.getElementById('recovery-step-request').style.display = 'none';
+            document.getElementById('recovery-step-verify').style.display = 'block';
+            document.getElementById('recovery-sent-note').textContent = `envio de código por ${recoveryChannel === 'email' ? 'e-mail' : 'whatsapp'} ainda não está conectado a um serviço real — essa tela já fica pronta pra quando o backend existir.`;
+        }
+        function verifyRecoveryCode() {
+            showToast('Verificação de código ainda não está conectada ao backend.');
+        }
+
+        function openSignup() {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('signup-overlay').style.display = 'flex';
+        }
+        function closeSignup() {
+            document.getElementById('signup-overlay').style.display = 'none';
+            document.getElementById('login-overlay').style.display = 'flex';
+        }
+        function doSignup() {
+            showToast('Cadastro ainda não está conectado ao backend — aguardando integração com o Kaike.');
+        }
+
         function startDemo() {
             const fmt = (d) => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
             const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return fmt(d); };

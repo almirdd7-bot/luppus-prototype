@@ -51,18 +51,107 @@
 
     <!-- OVERLAYS -->
     <div id="login-overlay" class="modal-overlay">
-        <div class="login-box login-box--brand">
+        <div class="login-box login-box--brand login-box--wide">
             <img class="login-logo" src="assets/logo-vertical.png" alt="LUPPUS — find the signal">
-            <input type="text" id="api-key-input" placeholder="FIREBASE API KEY" onkeypress="if(event.key === 'Enter') doKeyLogin()">
-            <input type="text" id="project-id-input" placeholder="FIREBASE PROJECT ID" onkeypress="if(event.key === 'Enter') doKeyLogin()">
-            <button type="button" id="btn-login-action" onclick="doKeyLogin()">Acessar Ecossistema</button>
-            <label class="client-checkbox toggle-switch">
-                <input type="checkbox" id="client-mode-check">
-                <span class="toggle-slider"></span>
-                <span>Entrar com Acesso Restrito (Modo Cliente)</span>
-            </label>
+
+            <div class="login-tabs">
+                <button type="button" class="login-tab active" data-tab="empresa" onclick="switchLoginTab('empresa')">empresa</button>
+                <button type="button" class="login-tab" data-tab="cliente" onclick="switchLoginTab('cliente')">cliente</button>
+                <button type="button" class="login-tab" data-tab="dev" onclick="switchLoginTab('dev')">desenvolvedor</button>
+            </div>
+
+            <!-- ABA EMPRESA -->
+            <div id="login-panel-empresa" class="login-tab-panel active">
+                <input type="text" id="empresa-email-input" placeholder="E-MAIL" autofocus onkeypress="if(event.key === 'Enter') doPasswordLogin('empresa')">
+                <div class="password-field">
+                    <input type="password" id="empresa-password-input" placeholder="SENHA" onkeypress="if(event.key === 'Enter') doPasswordLogin('empresa')">
+                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('empresa-password-input', this)" aria-label="mostrar senha"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+                </div>
+                <button type="button" onclick="doPasswordLogin('empresa')">Entrar</button>
+                <button type="button" class="text-link" onclick="openForgotPassword()">esqueceu a senha?</button>
+                <button type="button" class="text-link" onclick="openSignup()">criar conta</button>
+            </div>
+
+            <!-- ABA CLIENTE -->
+            <div id="login-panel-cliente" class="login-tab-panel">
+                <input type="text" id="cliente-email-input" placeholder="E-MAIL" onkeypress="if(event.key === 'Enter') doPasswordLogin('cliente')">
+                <div class="password-field">
+                    <input type="password" id="cliente-password-input" placeholder="SENHA" onkeypress="if(event.key === 'Enter') doPasswordLogin('cliente')">
+                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('cliente-password-input', this)" aria-label="mostrar senha"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+                </div>
+                <button type="button" onclick="doPasswordLogin('cliente')">Entrar</button>
+                <button type="button" class="text-link" onclick="openForgotPassword()">esqueceu a senha?</button>
+                <button type="button" class="text-link" onclick="openSignup()">criar conta</button>
+            </div>
+
+            <!-- ABA DESENVOLVEDOR -->
+            <div id="login-panel-dev" class="login-tab-panel">
+                <div class="password-field">
+                    <input type="password" id="api-key-input" placeholder="FIREBASE API KEY" onkeypress="if(event.key === 'Enter') doKeyLogin()">
+                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('api-key-input', this)" aria-label="mostrar api key"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+                </div>
+                <div class="password-field">
+                    <input type="password" id="project-id-input" placeholder="FIREBASE PROJECT ID" onkeypress="if(event.key === 'Enter') doKeyLogin()">
+                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('project-id-input', this)" aria-label="mostrar project id"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+                </div>
+                <p class="support-note" style="margin-bottom: 18px;">essas credenciais vêm do seu administrador de sistema.</p>
+                <button type="button" id="btn-login-action" onclick="doKeyLogin()">Acessar Ecossistema</button>
+                <label class="client-checkbox toggle-switch">
+                    <input type="checkbox" id="client-mode-check">
+                    <span class="toggle-slider"></span>
+                    <span>testar como modo cliente</span>
+                </label>
+            </div>
+
             <div id="login-error" class="error-msg"></div>
-            <button type="button" class="demo-link" onclick="startDemo()">ver demonstração com dados de exemplo</button>
+
+            <button type="button" class="demo-cta" onclick="startDemo()">
+                <span class="demo-cta-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg></span>
+                <span class="demo-cta-text"><strong>ver demonstração</strong><span>explore o painel com dados de exemplo, sem precisar de conta</span></span>
+            </button>
+        </div>
+    </div>
+
+    <div id="forgot-password-overlay" class="modal-overlay" style="display: none;">
+        <div class="login-box">
+            <h1 style="font-size: 20px;">recuperar senha</h1>
+            <p>escolha como quer receber o código</p>
+
+            <div class="chip-list" style="justify-content: center; margin-bottom: 24px;">
+                <button type="button" class="chip active" id="recovery-tab-email" onclick="switchRecoveryChannel('email')">e-mail</button>
+                <button type="button" class="chip" id="recovery-tab-whatsapp" onclick="switchRecoveryChannel('whatsapp')">whatsapp</button>
+            </div>
+
+            <div id="recovery-step-request">
+                <input type="text" id="recovery-contact-input" placeholder="seu e-mail cadastrado">
+                <button type="button" onclick="sendRecoveryCode()">Enviar código</button>
+            </div>
+
+            <div id="recovery-step-verify" style="display: none;">
+                <p class="support-note" id="recovery-sent-note" style="margin-bottom: 18px;"></p>
+                <input type="text" id="recovery-code-input" placeholder="CÓDIGO DE 6 DÍGITOS" maxlength="6">
+                <button type="button" onclick="verifyRecoveryCode()">Verificar código</button>
+                <button type="button" class="text-link" onclick="sendRecoveryCode()">reenviar código</button>
+            </div>
+
+            <button type="button" class="outline-btn" style="width: 100%; margin-top: 15px;" onclick="closeForgotPassword()">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="signup-overlay" class="modal-overlay" style="display: none;">
+        <div class="login-box">
+            <h1 style="font-size: 20px;">criar conta</h1>
+            <p>cadastro inicial — sujeito a mudanças</p>
+            <input type="text" id="signup-name-input" placeholder="NOME COMPLETO">
+            <input type="text" id="signup-company-input" placeholder="EMPRESA / CNPJ">
+            <input type="text" id="signup-email-input" placeholder="E-MAIL">
+            <div class="password-field">
+                <input type="password" id="signup-password-input" placeholder="SENHA">
+                <button type="button" class="password-toggle" onclick="togglePasswordVisibility('signup-password-input', this)" aria-label="mostrar senha"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+                </div>
+            <input type="password" id="signup-password-confirm-input" placeholder="CONFIRMAR SENHA">
+            <button type="button" onclick="doSignup()">Criar conta</button>
+            <button type="button" class="outline-btn" style="width: 100%; margin-top: 10px;" onclick="closeSignup()">Cancelar</button>
         </div>
     </div>
 

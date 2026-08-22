@@ -41,6 +41,7 @@
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 50% 40%, var(--graphite) 0%, var(--obsidian) 75%); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
         .login-box { background-color: var(--obsidian); border: 1px solid rgba(214, 180, 106, 0.18); padding: 56px 44px; border-radius: 4px; text-align: center; width: 360px; box-shadow: 0 25px 60px rgba(0,0,0,0.55); }
+        .login-box--wide { width: 440px; }
 
         .login-logo { display: block; width: 62%; max-width: 220px; height: auto; margin: 0 auto 12px; }
 
@@ -71,6 +72,41 @@
 
         .login-box button.demo-link { background-color: transparent; color: var(--text-muted); font-weight: 500; text-transform: lowercase; letter-spacing: 0.5px; margin-top: 22px; padding: 18px 0 0; border: none; border-top: 1px solid var(--border); border-radius: 0; }
         .login-box button.demo-link:hover { background-color: transparent; color: var(--champagne); }
+
+        /* LOGIN TABS */
+        .login-tabs { display: flex; justify-content: center; gap: 4px; margin-bottom: 30px; border-bottom: 1px solid var(--border); }
+        .login-box button.login-tab { width: auto !important; flex: 1; background: none !important; background-color: transparent !important; border: none !important; padding: 10px 6px !important; color: var(--text-muted) !important; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase !important; cursor: pointer; border-bottom: 2px solid transparent !important; margin-bottom: -1px; margin-top: 0 !important; transition: 0.2s; font-family: 'Inter', sans-serif; }
+        .login-box button.login-tab:hover { color: var(--gold) !important; }
+        .login-box button.login-tab.active { color: var(--champagne) !important; border-bottom-color: var(--champagne) !important; }
+        .login-tab-panel { display: none; }
+        .login-tab-panel.active { display: block; }
+
+        /* PASSWORD VISIBILITY TOGGLE */
+        .password-field { position: relative; }
+        .password-field input { padding-right: 36px !important; }
+        .password-toggle { position: absolute; right: 0; top: 0; width: auto !important; padding: 12px 6px !important; margin: 0 !important; background: transparent !important; color: var(--text-muted) !important; border: none !important; text-transform: none !important; letter-spacing: normal !important; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .password-toggle:hover { color: var(--gold) !important; background: transparent !important; }
+
+        /* CHIP TOGGLES INSIDE LOGIN BOX (recuperação de senha) */
+        .login-box button.chip { width: auto; margin-top: 0; margin-bottom: 0; text-transform: none; letter-spacing: normal; font-weight: 400; background-color: rgba(212, 175, 55, 0.1); color: var(--text-main); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 12px; }
+        .login-box button.chip:hover { background-color: rgba(212, 175, 55, 0.1); }
+        .login-box button.chip.active { background-color: var(--champagne); color: var(--obsidian); border-color: var(--champagne); font-weight: 600; }
+
+        /* TEXT LINK BUTTONS INSIDE LOGIN BOX */
+        .login-box button.text-link { background-color: transparent; color: var(--text-muted); font-weight: 500; text-transform: lowercase; letter-spacing: 0.3px; margin-top: 12px; padding: 0; border: none; border-radius: 0; font-size: 11px; }
+        .login-box button.text-link:hover { background-color: transparent; color: var(--champagne); }
+
+        /* DEMO CTA */
+        .login-box button.demo-cta { display: flex; align-items: center; gap: 14px; width: 100%; margin-top: 26px; padding: 16px 18px; background-color: rgba(212, 175, 55, 0.06); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; text-align: left; transition: 0.2s; text-transform: none; letter-spacing: normal; }
+        .login-box button.demo-cta:hover { border-color: var(--gold); background-color: rgba(212, 175, 55, 0.1); }
+        .demo-cta-icon { width: 36px; height: 36px; border-radius: 50%; background: rgba(212, 175, 55, 0.12); color: var(--gold); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .demo-cta-text { display: flex; flex-direction: column; gap: 3px; }
+        .demo-cta-text strong { color: var(--champagne); font-size: 12px; letter-spacing: 0.5px; text-transform: lowercase; font-weight: 600; }
+        .demo-cta-text span { color: var(--text-muted); font-size: 10.5px; font-style: italic; line-height: 1.4; }
+
+        @media (max-width: 600px) {
+            .login-box--wide { width: 100%; }
+        }
 
         .danger-box { border-color: rgba(240, 108, 108, 0.25); }
 
