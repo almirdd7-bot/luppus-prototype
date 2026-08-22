@@ -99,6 +99,7 @@
         function startDemo() {
             const fmt = (d) => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
             const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return fmt(d); };
+            const daysFromNow = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return fmt(d); };
 
             appDB = {
                 companies: [{ id: "demo", name: "LUPPUS Demo", info: "Ambiente de demonstração" }],
@@ -115,7 +116,11 @@
                 ] },
                 spreadsheets: {},
                 vault: { demo: [
-                    { name: "Contrato Social", date: daysAgo(30), file: { data: "data:text/plain;base64,RGVtb25zdHJhw6fDo28gTFVQUFVT", fname: "contrato-social.txt" } }
+                    { name: "Contrato Social", category: "Contrato", date: daysAgo(30), file: { data: "data:text/plain;base64,RGVtb25zdHJhw6fDo28gTFVQUFVT", fname: "contrato-social.txt" } },
+                    { name: "Certidão Negativa de Débitos", category: "Certidão", date: daysAgo(60), expiry: daysAgo(5), file: { data: "data:text/plain;base64,RGVtb25zdHJhw6fDo28gTFVQUFVT", fname: "certidao-negativa.txt" } },
+                    { name: "Nota Fiscal - Consultoria", category: "Nota Fiscal", date: daysAgo(10), file: { data: "data:text/plain;base64,RGVtb25zdHJhw6fDo28gTFVQUFVT", fname: "nota-fiscal.txt" } },
+                    { name: "Certidão FGTS", category: "Certidão", date: daysAgo(45), expiry: daysFromNow(12), file: { data: "data:text/plain;base64,RGVtb25zdHJhw6fDo28gTFVQUFVT", fname: "certidao-fgts.txt" } },
+                    { name: "Comprovante de Endereço", category: "Comprovante", date: daysAgo(90), expiry: daysFromNow(200), file: { data: "data:text/plain;base64,RGVtb25zdHJhw6fDo28gTFVQUFVT", fname: "comprovante-endereco.txt" } }
                 ] }
             };
             isClientMode = false;
@@ -456,21 +461,44 @@
         }
 
         // --- COFRE DIGITAL (VAULT) ---
+        function parseBRDate(str) {
+            if(!str) return null;
+            const parts = str.trim().split('/');
+            if(parts.length !== 3) return null;
+            const d = new Date(parts[2], parts[1] - 1, parts[0]);
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        function vaultExpiryBadge(expiry) {
+            const expDate = parseBRDate(expiry);
+            if(!expDate) return '';
+            const today = new Date(); today.setHours(0,0,0,0);
+            const diffDays = Math.round((expDate - today) / 86400000);
+            if(diffDays < 0) return `<span class="chip chip-danger">vencido em ${expiry}</span>`;
+            if(diffDays <= 30) return `<span class="chip">vence em ${diffDays}d (${expiry})</span>`;
+            return `<span class="chip chip-success">válido até ${expiry}</span>`;
+        }
+
         function processVaultUpload() {
             const name = document.getElementById('vault-name').value.trim();
+            const category = document.getElementById('vault-category').value;
+            const expiry = document.getElementById('vault-expiry').value.trim();
             const fileInput = document.getElementById('vault-file');
             const file = fileInput.files[0];
-            
+
             if(!name || !file) { showToast("Preencha nome e anexe documento."); return; }
             if(file.size > 512000) { showToast("Limite de 500kb excedido."); return; }
+            if(expiry && !parseBRDate(expiry)) { showToast("Data de validade inválida. Use DD/MM/AAAA."); return; }
 
             const reader = new FileReader();
             reader.onload = function(e) {
                 if(!appDB.vault) appDB.vault = {};
                 if(!appDB.vault[appDB.currentCompanyId]) appDB.vault[appDB.currentCompanyId] = [];
-                appDB.vault[appDB.currentCompanyId].push({ date: getTodayDate(), name: name, file: { data: e.target.result, fname: file.name } });
+                appDB.vault[appDB.currentCompanyId].push({ date: getTodayDate(), name: name, category: category, expiry: expiry, file: { data: e.target.result, fname: file.name, mime: file.type } });
                 saveToCloud();
-                document.getElementById('vault-name').value = ''; fileInput.value = '';
+                document.getElementById('vault-name').value = '';
+                document.getElementById('vault-expiry').value = '';
+                fileInput.value = '';
                 renderVault();
                 showToast("Salvo no Cofre.");
             };
@@ -481,20 +509,63 @@
             const ul = document.getElementById('vault-list');
             if(!ul) return;
             ul.innerHTML = '';
-            const docs = (appDB.vault && appDB.vault[appDB.currentCompanyId]) ? appDB.vault[appDB.currentCompanyId] : [];
-            
-            if(docs.length === 0) { ul.innerHTML = '<li class="empty-state">Nenhum documento no cofre ainda.</li>'; return; }
+            const allDocs = (appDB.vault && appDB.vault[appDB.currentCompanyId]) ? appDB.vault[appDB.currentCompanyId] : [];
 
-            docs.forEach((d, i) => {
+            if(allDocs.length === 0) { ul.innerHTML = '<li class="empty-state">Nenhum documento no cofre ainda.</li>'; return; }
+
+            const searchEl = document.getElementById('vault-search');
+            const query = searchEl ? searchEl.value.trim().toLowerCase() : '';
+
+            let matchCount = 0;
+            allDocs.forEach((d, i) => {
+                if(query && !d.name.toLowerCase().includes(query) && !(d.category || '').toLowerCase().includes(query)) return;
+                matchCount++;
+
                 const li = document.createElement('li');
                 li.className = 'recent-item';
-                let btnHtml = isClientMode ? '' : `<button class="icon-btn" onclick="deleteVault(${i})" aria-label="excluir documento"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>`;
+                let deleteBtnHtml = isClientMode ? '' : `<button class="icon-btn" onclick="deleteVault(${i})" aria-label="excluir documento"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>`;
+                const categoryChip = d.category ? `<span class="chip">${d.category}</span>` : '';
+                const expiryChip = vaultExpiryBadge(d.expiry);
                 li.innerHTML = `
-                    <div><strong style="color: var(--text-main);">${d.name}</strong> <span style="color:var(--text-muted); font-size:10px;">(${d.date})</span></div>
-                    <div><a href="${d.file.data}" download="${d.file.fname}" class="attachment-link">Download</a> ${btnHtml}</div>
+                    <div>
+                        <strong style="color: var(--text-main);">${d.name}</strong> <span style="color:var(--text-muted); font-size:10px;">(${d.date})</span>
+                        ${(categoryChip || expiryChip) ? `<div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">${categoryChip}${expiryChip}</div>` : ''}
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
+                        <button class="icon-btn" onclick="openVaultPreview(${i})" aria-label="visualizar documento"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+                        <a href="${d.file.data}" download="${d.file.fname}" class="attachment-link">Download</a>
+                        ${deleteBtnHtml}
+                    </div>
                 `;
                 ul.appendChild(li);
             });
+
+            if(matchCount === 0) { ul.innerHTML = '<li class="empty-state">Nenhum documento encontrado.</li>'; }
+        }
+
+        function openVaultPreview(index) {
+            const docs = appDB.vault[appDB.currentCompanyId];
+            const d = docs[index];
+            if(!d) return;
+            document.getElementById('vault-preview-title').textContent = d.name;
+            const body = document.getElementById('vault-preview-body');
+            const mime = (d.file.mime || '').toLowerCase();
+            const fname = (d.file.fname || '').toLowerCase();
+            const isImage = mime.startsWith('image/') || /\.(png|jpe?g|gif|webp)$/.test(fname);
+            const isPdf = mime === 'application/pdf' || fname.endsWith('.pdf');
+            if(isImage) {
+                body.innerHTML = `<img src="${d.file.data}" alt="${d.name}">`;
+            } else if(isPdf) {
+                body.innerHTML = `<iframe src="${d.file.data}" title="${d.name}"></iframe>`;
+            } else {
+                body.innerHTML = `<p class="empty-state">Pré-visualização não disponível para este tipo de arquivo. Use o download.</p>`;
+            }
+            document.getElementById('vault-preview-overlay').style.display = 'flex';
+        }
+
+        function closeVaultPreview() {
+            document.getElementById('vault-preview-overlay').style.display = 'none';
+            document.getElementById('vault-preview-body').innerHTML = '';
         }
 
         function deleteVault(index) {
