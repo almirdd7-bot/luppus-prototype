@@ -314,23 +314,42 @@
                     <div class="panel-card">
                         <div class="panel-title">importação de dados</div>
                         <input type="file" id="bi-csv" accept=".csv" style="margin-bottom: 15px;" onchange="handleCSVUpload()">
+                        <button class="outline-btn" style="width: 100%; margin-bottom: 5px;" onclick="loadSystemDataToBI()">usar lançamentos do sistema</button>
                         <div id="bi-controls" style="display: none; margin-top: 20px;">
                             <div class="form-group"><label>Eixo X (Agrupador)</label><select id="bi-x" onchange="updateBIChart()"></select></div>
                             <div class="form-group"><label>Eixo Y (Valor)</label><select id="bi-y" onchange="updateBIChart()"></select></div>
-                            <div class="form-group"><label>Tipo de Gráfico</label>
-                                <select id="bi-type" onchange="updateBIChart()">
-                                    <option value="bar">Barras</option><option value="line">Linhas</option><option value="pie">Pizza</option>
-                                </select>
+                            <div class="form-row">
+                                <div class="form-group"><label>Agregação</label>
+                                    <select id="bi-agg" onchange="updateBIChart()">
+                                        <option value="sum">Soma</option><option value="avg">Média</option><option value="count">Contagem</option><option value="max">Máximo</option><option value="min">Mínimo</option>
+                                    </select>
+                                </div>
+                                <div class="form-group"><label>Tipo de Gráfico</label>
+                                    <select id="bi-type" onchange="updateBIChart()">
+                                        <option value="bar">Barras</option><option value="line">Linhas</option><option value="pie">Pizza</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group"><label>Filtrar coluna</label><select id="bi-filter-col" onchange="updateBIFilterValues()"><option value="">nenhum</option></select></div>
+                                <div class="form-group"><label>Valor do filtro</label><select id="bi-filter-value" onchange="updateBIChart()" disabled><option value="">todos</option></select></div>
                             </div>
                         </div>
                     </div>
                     <div class="panel-card">
-                        <div class="panel-title">canvas de análise</div>
+                        <div class="panel-title">
+                            canvas de análise
+                            <button class="outline-btn hide-on-pdf" style="padding: 4px 10px; font-size: 10px;" onclick="exportBIChart()">baixar gráfico</button>
+                        </div>
                         <div class="chart-container" style="height: 350px;">
-                            <p id="bi-empty-state" class="empty-state">Envie um CSV ao lado para começar a analisar seus dados.</p>
+                            <p id="bi-empty-state" class="empty-state">Envie um CSV ou use os lançamentos do sistema para começar a analisar seus dados.</p>
                             <canvas id="biCanvas" style="display: none;"></canvas>
                         </div>
                     </div>
+                </div>
+                <div class="panel-card" id="bi-data-card" style="display: none; margin-top: 20px;">
+                    <div class="panel-title">dados importados</div>
+                    <div id="bi-data-table-container"></div>
                 </div>
             </div>
 
