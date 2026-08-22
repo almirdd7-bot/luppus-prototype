@@ -262,6 +262,14 @@
         .sheet-tab-add { background: transparent; border: 1px dashed var(--border); color: var(--text-muted); font-size: 15px; line-height: 1; padding: 7px 13px; border-radius: var(--radius-sm); cursor: pointer; transition: 0.2s; }
         .sheet-tab-add:hover { color: var(--gold); border-color: var(--gold); }
 
+        /* FAQ TABS (suporte) */
+        .faq-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 25px; border-bottom: 1px solid var(--border); }
+        .faq-tab { background: none; border: none; padding: 12px 18px; color: var(--text-muted); font-size: 13px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: 0.2s; text-transform: lowercase; font-family: 'Inter', sans-serif; }
+        .faq-tab:hover { color: var(--gold); }
+        .faq-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+        .faq-tab-panel { display: none; }
+        .faq-tab-panel.active { display: block; }
+
         /* CONFIG TABS */
         .config-tabs { display: flex; gap: 4px; margin-bottom: 25px; border-bottom: 1px solid var(--border); }
         .config-tab { background: none; border: none; padding: 12px 18px; color: var(--text-muted); font-size: 13px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: 0.2s; text-transform: lowercase; font-family: 'Inter', sans-serif; }

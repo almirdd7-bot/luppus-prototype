@@ -494,6 +494,16 @@
             if(navToggle) navToggle.checked = false;
         }
 
+        function switchFaqTab(tab) {
+            document.querySelectorAll('.faq-tab').forEach(el => el.classList.remove('active'));
+            const activeTab = document.querySelector('.faq-tab[data-tab="' + tab + '"]');
+            if(activeTab) activeTab.classList.add('active');
+
+            document.querySelectorAll('.faq-tab-panel').forEach(el => el.classList.remove('active'));
+            const activePanel = document.getElementById('faq-tab-' + tab);
+            if(activePanel) activePanel.classList.add('active');
+        }
+
         function switchConfigTab(tab) {
             document.querySelectorAll('.config-tab').forEach(el => el.classList.remove('active'));
             const activeTab = document.querySelector('.config-tab[data-tab="' + tab + '"]');
