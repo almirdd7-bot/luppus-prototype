@@ -182,6 +182,27 @@
                     <div class="kpi-card"><div class="kpi-title">custos</div><div class="kpi-value negative" id="total-out">R$ 0,00</div></div>
                     <div class="kpi-card"><div class="kpi-title">resultado líquido</div><div class="kpi-value" id="net-cash">R$ 0,00</div></div>
                 </div>
+                <div class="panel-card" style="margin-bottom: 20px;">
+                    <div class="panel-title">cotações do dia</div>
+                    <div class="quotes-grid">
+                        <div class="quote-card">
+                            <div class="quote-header"><span class="quote-pair">USD/BRL</span><span class="quote-change positive">+0,42%</span></div>
+                            <div class="quote-value">R$ 5,38</div>
+                            <div class="quote-exchange"><span>NASDAQ</span><span class="quote-change positive">+0,85%</span></div>
+                        </div>
+                        <div class="quote-card">
+                            <div class="quote-header"><span class="quote-pair">EUR/BRL</span><span class="quote-change negative">-0,18%</span></div>
+                            <div class="quote-value">R$ 5,82</div>
+                            <div class="quote-exchange"><span>DAX (Frankfurt)</span><span class="quote-change positive">+0,31%</span></div>
+                        </div>
+                        <div class="quote-card">
+                            <div class="quote-header"><span class="quote-pair">GBP/BRL</span><span class="quote-change positive">+0,09%</span></div>
+                            <div class="quote-value">R$ 6,74</div>
+                            <div class="quote-exchange"><span>FTSE 100</span><span class="quote-change negative">-0,12%</span></div>
+                        </div>
+                    </div>
+                    <p class="support-note">dados de exemplo — moedas e bolsas configuráveis em configurações › cliente. conectado à API de cotações pelo Kaike.</p>
+                </div>
                 <div class="dashboard-lower-grid">
                     <div class="panel-card">
                         <div class="panel-title">fluxo consolidado</div>
@@ -360,6 +381,80 @@
                             </div>
                             <button class="outline-btn" style="margin-top: 20px;" disabled>salvar alterações</button>
                             <p class="support-note">ainda não conectado — vinculado à sua conta quando o login por usuário estiver pronto.</p>
+                        </div>
+
+                        <div class="panel-card">
+                            <div class="panel-title">cotações no painel</div>
+                            <p class="support-note" style="margin-top: 0; margin-bottom: 18px;">escolha até 3 moedas e a bolsa de valores associada a cada uma para exibir no painel.</p>
+                            <div class="settings-list">
+                                <div class="settings-row">
+                                    <div class="settings-row-label">moeda 1</div>
+                                    <div class="settings-row-control settings-row-control-double">
+                                        <select disabled>
+                                            <option>Dólar (USD)</option>
+                                            <option>Euro (EUR)</option>
+                                            <option>Libra (GBP)</option>
+                                            <option>Peso Argentino (ARS)</option>
+                                            <option>Iene (JPY)</option>
+                                            <option>Franco Suíço (CHF)</option>
+                                        </select>
+                                        <select disabled>
+                                            <option>NASDAQ</option>
+                                            <option>NYSE</option>
+                                            <option>B3 (Ibovespa)</option>
+                                            <option>DAX (Frankfurt)</option>
+                                            <option>FTSE 100</option>
+                                            <option>Nikkei 225</option>
+                                            <option>Shanghai Composto</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">moeda 2</div>
+                                    <div class="settings-row-control settings-row-control-double">
+                                        <select disabled>
+                                            <option>Euro (EUR)</option>
+                                            <option>Dólar (USD)</option>
+                                            <option>Libra (GBP)</option>
+                                            <option>Peso Argentino (ARS)</option>
+                                            <option>Iene (JPY)</option>
+                                            <option>Franco Suíço (CHF)</option>
+                                        </select>
+                                        <select disabled>
+                                            <option>DAX (Frankfurt)</option>
+                                            <option>NASDAQ</option>
+                                            <option>NYSE</option>
+                                            <option>B3 (Ibovespa)</option>
+                                            <option>FTSE 100</option>
+                                            <option>Nikkei 225</option>
+                                            <option>Shanghai Composto</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-label">moeda 3</div>
+                                    <div class="settings-row-control settings-row-control-double">
+                                        <select disabled>
+                                            <option>Libra (GBP)</option>
+                                            <option>Dólar (USD)</option>
+                                            <option>Euro (EUR)</option>
+                                            <option>Peso Argentino (ARS)</option>
+                                            <option>Iene (JPY)</option>
+                                            <option>Franco Suíço (CHF)</option>
+                                        </select>
+                                        <select disabled>
+                                            <option>FTSE 100</option>
+                                            <option>NASDAQ</option>
+                                            <option>NYSE</option>
+                                            <option>B3 (Ibovespa)</option>
+                                            <option>DAX (Frankfurt)</option>
+                                            <option>Nikkei 225</option>
+                                            <option>Shanghai Composto</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="support-note">depende da API de cotações no backend — ainda não existe.</p>
                         </div>
 
                         <div class="panel-card">
