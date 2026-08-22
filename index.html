@@ -263,13 +263,35 @@
                         <svg class="smart-search-icon" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                         <input type="text" id="smart-search" class="smart-search-input" placeholder="Luppus AI: Digite 'apenas receitas' ou 'custos com infraestrutura'..." onkeyup="applySmartSearch()">
                     </div>
+                    <div class="chip-list" style="margin-top: 16px; margin-bottom: 0;">
+                        <button type="button" class="chip" onclick="setAuditQuickFilter('receitas')">só receitas</button>
+                        <button type="button" class="chip" onclick="setAuditQuickFilter('custos')">só custos</button>
+                        <button type="button" class="chip" onclick="setAuditQuickFilter('ultimos30')">últimos 30 dias</button>
+                        <button type="button" class="chip" id="audit-chip-no-attachment" onclick="toggleAuditNoAttachment()">sem anexo</button>
+                    </div>
+                    <div class="form-row" style="margin-top: 18px; margin-bottom: 0;">
+                        <div class="form-group" style="margin-bottom: 0;"><label>de</label><input type="text" id="audit-date-from" placeholder="DD/MM/AAAA" oninput="applySmartSearch()"></div>
+                        <div class="form-group" style="margin-bottom: 0;"><label>até</label><input type="text" id="audit-date-to" placeholder="DD/MM/AAAA" oninput="applySmartSearch()"></div>
+                    </div>
+                    <button class="outline-btn" style="margin-top: 15px; padding: 6px 12px;" onclick="clearAuditFilters()">limpar filtros</button>
                 </div>
 
                 <div class="panel-card">
-                    <div class="panel-title">livro razão completo</div>
+                    <div class="panel-title">
+                        livro razão completo
+                        <button class="outline-btn hide-on-pdf" style="padding: 4px 10px; font-size: 10px;" onclick="exportAuditCSV()">baixar csv</button>
+                    </div>
+                    <p class="audit-summary hide-on-pdf" id="audit-filter-summary"></p>
                     <div class="table-container">
                         <table id="history-table">
-                            <thead><tr><th>data</th><th>descrição</th><th>natureza</th><th>valor</th><th class="hide-on-pdf">anexo</th><th class="hide-on-pdf hide-client">ação</th></tr></thead>
+                            <thead><tr>
+                                <th class="sortable" data-sort="date" onclick="setAuditSort('date')">data</th>
+                                <th class="sortable" data-sort="desc" onclick="setAuditSort('desc')">descrição</th>
+                                <th class="sortable" data-sort="type" onclick="setAuditSort('type')">natureza</th>
+                                <th class="sortable" data-sort="amount" onclick="setAuditSort('amount')">valor</th>
+                                <th class="hide-on-pdf">anexo</th>
+                                <th class="hide-on-pdf hide-client">ação</th>
+                            </tr></thead>
                             <tbody></tbody>
                         </table>
                     </div>

@@ -336,34 +336,136 @@
         }
 
         // --- SMART SEARCH (AI LITE) ---
+        let auditSortColumn = 'date';
+        let auditSortDir = 'desc';
+        let auditNoAttachmentOnly = false;
+        let lastAuditFilteredData = [];
+
         function applySmartSearch() {
             clearTimeout(filterTimeout);
-            filterTimeout = setTimeout(() => {
-                const query = (document.getElementById('smart-search') ? document.getElementById('smart-search').value : '').toLowerCase();
-                let filterType = 'all';
-                let filterDesc = query;
+            filterTimeout = setTimeout(runAuditFilter, 300);
+        }
 
-                if(query.includes('custo') || query.includes('saida') || query.includes('saída') || query.includes('despesa')) {
-                    filterType = 'out';
-                    filterDesc = filterDesc.replace(/(custos?|saídas?|saida?|despesas?|apenas)/g, '').trim();
-                } else if(query.includes('receita') || query.includes('entrada') || query.includes('ganho')) {
-                    filterType = 'in';
-                    filterDesc = filterDesc.replace(/(receitas?|entradas?|ganhos?|apenas)/g, '').trim();
+        function runAuditFilter() {
+            const query = (document.getElementById('smart-search') ? document.getElementById('smart-search').value : '').toLowerCase();
+            let filterType = 'all';
+            let filterDesc = query;
+
+            if(query.includes('custo') || query.includes('saida') || query.includes('saída') || query.includes('despesa')) {
+                filterType = 'out';
+                filterDesc = filterDesc.replace(/(custos?|saídas?|saida?|despesas?|apenas)/g, '').trim();
+            } else if(query.includes('receita') || query.includes('entrada') || query.includes('ganho')) {
+                filterType = 'in';
+                filterDesc = filterDesc.replace(/(receitas?|entradas?|ganhos?|apenas)/g, '').trim();
+            }
+
+            filterDesc = filterDesc.replace(/com|de|no|o|a/g, '').trim();
+
+            const dateFromEl = document.getElementById('audit-date-from');
+            const dateToEl = document.getElementById('audit-date-to');
+            const dateFrom = dateFromEl ? parseBRDate(dateFromEl.value) : null;
+            const dateTo = dateToEl ? parseBRDate(dateToEl.value) : null;
+
+            const currentTx = appDB.transactions[appDB.currentCompanyId] || [];
+            const withIndex = currentTx.map((t, i) => ({ ...t, originalIndex: i }));
+
+            let filteredData = withIndex.filter(t => {
+                if(!t.desc.toLowerCase().includes(filterDesc)) return false;
+                if(filterType !== 'all' && t.type !== filterType) return false;
+                if(auditNoAttachmentOnly && t.receipt) return false;
+                const td = parseBRDate(t.date);
+                if(dateFrom && td && td < dateFrom) return false;
+                if(dateTo && td && td > dateTo) return false;
+                return true;
+            });
+
+            filteredData.sort((a, b) => {
+                let cmp = 0;
+                if(auditSortColumn === 'date') {
+                    const da = a.date.split('/').reverse().join(''); const db = b.date.split('/').reverse().join('');
+                    cmp = da.localeCompare(db);
+                } else if(auditSortColumn === 'desc') {
+                    cmp = a.desc.localeCompare(b.desc);
+                } else if(auditSortColumn === 'type') {
+                    cmp = a.type.localeCompare(b.type);
+                } else if(auditSortColumn === 'amount') {
+                    cmp = a.amount - b.amount;
                 }
-                
-                filterDesc = filterDesc.replace(/com|de|no|o|a/g, '').trim();
+                return auditSortDir === 'asc' ? cmp : -cmp;
+            });
 
-                const currentTx = appDB.transactions[appDB.currentCompanyId] || [];
-                let sortedTx = currentTx.map((t, i) => { return { ...t, originalIndex: i }; }).sort((a, b) => {
-                    let da = a.date.split('/').reverse().join(''); let db = b.date.split('/').reverse().join('');
-                    return db.localeCompare(da);
-                });
+            lastAuditFilteredData = filteredData;
+            renderData(filteredData);
+            renderAuditSummary(filteredData);
+            renderAuditSortIndicators();
+        }
 
-                const filteredData = sortedTx.filter(t => {
-                    return t.desc.toLowerCase().includes(filterDesc) && (filterType === 'all' || t.type === filterType);
-                });
-                renderData(filteredData);
-            }, 300);
+        function renderAuditSummary(data) {
+            const el = document.getElementById('audit-filter-summary');
+            if(!el) return;
+            let totalIn = 0, totalOut = 0;
+            data.forEach(t => { if(t.type === 'in') totalIn += t.amount; else totalOut += t.amount; });
+            const net = totalIn - totalOut;
+            const netColor = net >= 0 ? 'var(--success)' : 'var(--danger)';
+            el.innerHTML = `${data.length} lançamento${data.length === 1 ? '' : 's'} · <span style="color: var(--success);">receitas R$ ${totalIn.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span> · <span style="color: var(--danger);">custos R$ ${totalOut.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span> · <span style="color: ${netColor};">líquido R$ ${net.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>`;
+        }
+
+        function renderAuditSortIndicators() {
+            document.querySelectorAll('#history-table th[data-sort]').forEach(th => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+                if(th.dataset.sort === auditSortColumn) th.classList.add(auditSortDir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+            });
+        }
+
+        function setAuditSort(col) {
+            if(auditSortColumn === col) { auditSortDir = auditSortDir === 'asc' ? 'desc' : 'asc'; }
+            else { auditSortColumn = col; auditSortDir = col === 'date' ? 'desc' : 'asc'; }
+            runAuditFilter();
+        }
+
+        function toggleAuditNoAttachment() {
+            auditNoAttachmentOnly = !auditNoAttachmentOnly;
+            const chip = document.getElementById('audit-chip-no-attachment');
+            if(chip) chip.classList.toggle('active', auditNoAttachmentOnly);
+            runAuditFilter();
+        }
+
+        function setAuditQuickFilter(type) {
+            const searchEl = document.getElementById('smart-search');
+            const fromEl = document.getElementById('audit-date-from');
+            const toEl = document.getElementById('audit-date-to');
+            if(type === 'receitas') { searchEl.value = 'apenas receitas'; }
+            else if(type === 'custos') { searchEl.value = 'apenas custos'; }
+            else if(type === 'ultimos30') {
+                const d = new Date(); d.setDate(d.getDate() - 30);
+                fromEl.value = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+                toEl.value = '';
+            }
+            runAuditFilter();
+        }
+
+        function clearAuditFilters() {
+            document.getElementById('smart-search').value = '';
+            document.getElementById('audit-date-from').value = '';
+            document.getElementById('audit-date-to').value = '';
+            auditNoAttachmentOnly = false;
+            const chip = document.getElementById('audit-chip-no-attachment'); if(chip) chip.classList.remove('active');
+            auditSortColumn = 'date'; auditSortDir = 'desc';
+            runAuditFilter();
+        }
+
+        function exportAuditCSV() {
+            if(!lastAuditFilteredData || lastAuditFilteredData.length === 0) { showToast("Nada para exportar."); return; }
+            const header = ['Data', 'Descrição', 'Natureza', 'Valor'];
+            const rows = lastAuditFilteredData.map(t => [t.date, t.desc.replace(/;/g, ','), t.type === 'in' ? 'Receita' : 'Custo', t.amount.toFixed(2).replace('.', ',')]);
+            const csv = [header, ...rows].map(r => r.join(';')).join('\r\n');
+            const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `luppus_auditoria_${Date.now()}.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
         }
 
         // --- RENDER TABLE & CHART ---
