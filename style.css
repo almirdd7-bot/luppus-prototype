@@ -52,6 +52,29 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
+        .loading-logo { display: block; width: 120px; max-width: 60%; margin: 0 auto 22px; animation: logoBreathe 1.8s ease-in-out infinite; }
+        @keyframes logoBreathe {
+            0%, 100% { transform: scale(1); opacity: 0.85; }
+            50% { transform: scale(1.06); opacity: 1; }
+        }
+
+        /* LOGIN → LOADING TRANSITION */
+        .overlay-fade-out { animation: overlayFadeOut 0.3s ease forwards; }
+        .overlay-fade-in { animation: overlayFadeIn 0.35s ease; }
+        @keyframes overlayFadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes overlayFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .login-box button.btn-success { background-color: var(--success) !important; color: var(--obsidian) !important; display: flex; align-items: center; justify-content: center; }
+
+        /* ERROR SHAKE */
+        @keyframes shake {
+            10%, 90% { transform: translateX(-1px); }
+            20%, 80% { transform: translateX(2px); }
+            30%, 50%, 70% { transform: translateX(-4px); }
+            40%, 60% { transform: translateX(4px); }
+        }
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+
         .login-box h1 { color: var(--champagne); letter-spacing: 5px; margin-bottom: 8px; font-size: 26px; font-weight: 600; font-family: 'Playfair Display', serif; }
         .login-box p { color: var(--text-muted); font-size: 11px; font-style: italic; letter-spacing: 2px; margin-bottom: 38px; }
 

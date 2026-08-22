@@ -70,6 +70,13 @@
             if(!errEl) return;
             errEl.innerHTML = msg;
             errEl.style.display = 'block';
+
+            const box = document.querySelector('#login-overlay .login-box');
+            if(box) {
+                box.classList.remove('shake');
+                void box.offsetWidth;
+                box.classList.add('shake');
+            }
         }
 
         window.onload = function() {
@@ -264,14 +271,40 @@
             }
 
             document.getElementById('login-error').style.display = 'none';
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('loading-overlay').style.display = 'flex';
+            transitionToLoading(config);
+        }
 
-            applyClientModeUI();
-            
+        function transitionToLoading(config) {
+            const btn = document.getElementById('btn-login-action');
+            const originalText = btn ? btn.textContent : '';
+            if(btn) {
+                btn.disabled = true;
+                btn.classList.add('btn-success');
+                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+            }
+
             setTimeout(() => {
-                initFirebase(config);
-            }, 100);
+                const loginOverlay = document.getElementById('login-overlay');
+                const loadingOverlay = document.getElementById('loading-overlay');
+                loginOverlay.classList.add('overlay-fade-out');
+
+                setTimeout(() => {
+                    loginOverlay.style.display = 'none';
+                    loginOverlay.classList.remove('overlay-fade-out');
+                    if(btn) {
+                        btn.disabled = false;
+                        btn.classList.remove('btn-success');
+                        btn.textContent = originalText;
+                    }
+
+                    loadingOverlay.style.display = 'flex';
+                    loadingOverlay.classList.add('overlay-fade-in');
+                    setTimeout(() => loadingOverlay.classList.remove('overlay-fade-in'), 350);
+
+                    applyClientModeUI();
+                    setTimeout(() => { initFirebase(config); }, 100);
+                }, 300);
+            }, 450);
         }
 
         function doLogout() {
