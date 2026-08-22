@@ -79,6 +79,47 @@
             }
         }
 
+        // --- TRANSIÇÃO LOGIN → LOADING → APP (mínimo garantido, sem "flash") ---
+        let loadingShownAt = 0;
+        const MIN_LOADING_MS = 700;
+
+        function markLoadingShown() {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            loadingOverlay.style.display = 'flex';
+            loadingOverlay.classList.add('overlay-fade-in');
+            setTimeout(() => loadingOverlay.classList.remove('overlay-fade-in'), 600);
+            loadingShownAt = Date.now();
+        }
+
+        function hideLoadingOverlay(callback) {
+            const elapsed = Date.now() - loadingShownAt;
+            const wait = Math.max(0, MIN_LOADING_MS - elapsed);
+            setTimeout(() => {
+                const loadingOverlay = document.getElementById('loading-overlay');
+                loadingOverlay.classList.add('overlay-fade-out');
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                    loadingOverlay.classList.remove('overlay-fade-out');
+                    if(callback) callback();
+                }, 600);
+            }, wait);
+        }
+
+        const CHECK_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+
+        function fadeLoginToLoading(onLoadingShown) {
+            setTimeout(() => {
+                const loginOverlay = document.getElementById('login-overlay');
+                loginOverlay.classList.add('overlay-fade-out');
+                setTimeout(() => {
+                    loginOverlay.style.display = 'none';
+                    loginOverlay.classList.remove('overlay-fade-out');
+                    markLoadingShown();
+                    if(onLoadingShown) onLoadingShown();
+                }, 500);
+            }, 1400);
+        }
+
         window.onload = function() {
             try {
                 const savedKeys = localStorage.getItem('luppus_node_keys');
@@ -88,7 +129,7 @@
                 if(savedKeys) {
                     const config = JSON.parse(savedKeys);
                     document.getElementById('login-overlay').style.display = 'none';
-                    document.getElementById('loading-overlay').style.display = 'flex';
+                    markLoadingShown();
                     applyClientModeUI();
                     initFirebase(config);
                 } else {
@@ -280,31 +321,43 @@
             if(btn) {
                 btn.disabled = true;
                 btn.classList.add('btn-success');
-                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+                btn.innerHTML = CHECK_SVG;
             }
 
-            setTimeout(() => {
-                const loginOverlay = document.getElementById('login-overlay');
-                const loadingOverlay = document.getElementById('loading-overlay');
-                loginOverlay.classList.add('overlay-fade-out');
+            fadeLoginToLoading(() => {
+                if(btn) {
+                    btn.disabled = false;
+                    btn.classList.remove('btn-success');
+                    btn.textContent = originalText;
+                }
+                applyClientModeUI();
+                setTimeout(() => { initFirebase(config); }, 100);
+            });
+        }
 
-                setTimeout(() => {
-                    loginOverlay.style.display = 'none';
-                    loginOverlay.classList.remove('overlay-fade-out');
-                    if(btn) {
-                        btn.disabled = false;
-                        btn.classList.remove('btn-success');
-                        btn.textContent = originalText;
-                    }
+        function startDemoWithAnimation() {
+            const cta = document.querySelector('#login-overlay .demo-cta');
+            let iconEl, textEl, originalIconHTML, originalTextHTML;
+            if(cta) {
+                iconEl = cta.querySelector('.demo-cta-icon');
+                textEl = cta.querySelector('.demo-cta-text');
+                originalIconHTML = iconEl.innerHTML;
+                originalTextHTML = textEl.innerHTML;
+                cta.disabled = true;
+                cta.classList.add('demo-cta-success');
+                iconEl.innerHTML = CHECK_SVG;
+                textEl.innerHTML = '<strong>acesso confirmado</strong><span>carregando dados de exemplo...</span>';
+            }
 
-                    loadingOverlay.style.display = 'flex';
-                    loadingOverlay.classList.add('overlay-fade-in');
-                    setTimeout(() => loadingOverlay.classList.remove('overlay-fade-in'), 600);
-
-                    applyClientModeUI();
-                    setTimeout(() => { initFirebase(config); }, 100);
-                }, 600);
-            }, 1300);
+            fadeLoginToLoading(() => {
+                if(cta) {
+                    cta.disabled = false;
+                    cta.classList.remove('demo-cta-success');
+                    iconEl.innerHTML = originalIconHTML;
+                    textEl.innerHTML = originalTextHTML;
+                }
+                hideLoadingOverlay(() => { startDemo(); });
+            });
         }
 
         function doLogout() {
@@ -328,27 +381,28 @@
 
                 const docRef = cloudDB.collection("luppus_system").doc("node_state");
                 docRef.onSnapshot((doc) => {
-                    document.getElementById('loading-overlay').style.display = 'none';
-                    const entryDateEl = document.getElementById('entry-date');
-                    if(entryDateEl) entryDateEl.value = getTodayDate();
+                    hideLoadingOverlay(() => {
+                        const entryDateEl = document.getElementById('entry-date');
+                        if(entryDateEl) entryDateEl.value = getTodayDate();
 
-                    if (doc.exists) {
-                        appDB = doc.data();
-                        if(!appDB.currentCompanyId || !appDB.companies.find(c => c.id === appDB.currentCompanyId)) {
-                            appDB.currentCompanyId = appDB.companies[0].id;
+                        if (doc.exists) {
+                            appDB = doc.data();
+                            if(!appDB.currentCompanyId || !appDB.companies.find(c => c.id === appDB.currentCompanyId)) {
+                                appDB.currentCompanyId = appDB.companies[0].id;
+                            }
+                            if(!appDB.spreadsheets) appDB.spreadsheets = {};
+                            if(!appDB.vault) appDB.vault = {};
+
+                            renderCompanyDropdown();
+                            applySmartSearch();
+                            renderVault();
+                            if(!isClientMode && document.getElementById('view-planilhas').classList.contains('active')) initSpreadsheet();
+                        } else {
+                            saveToCloud();
+                            renderCompanyDropdown();
+                            applySmartSearch();
                         }
-                        if(!appDB.spreadsheets) appDB.spreadsheets = {};
-                        if(!appDB.vault) appDB.vault = {};
-                        
-                        renderCompanyDropdown();
-                        applySmartSearch();
-                        renderVault();
-                        if(!isClientMode && document.getElementById('view-planilhas').classList.contains('active')) initSpreadsheet(); 
-                    } else {
-                        saveToCloud();
-                        renderCompanyDropdown();
-                        applySmartSearch();
-                    }
+                    });
                 }, (error) => {
                     showLoginError("Acesso Negado.<br>Verifique as Regras de Segurança no Firebase.");
                     doLogoutFallback();

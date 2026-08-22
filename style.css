@@ -134,6 +134,9 @@
         /* DEMO CTA */
         .login-box button.demo-cta { display: flex; align-items: center; gap: 14px; width: 100%; margin-top: 26px; padding: 16px 18px; background-color: rgba(212, 175, 55, 0.06); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; text-align: left; transition: 0.2s; text-transform: none; letter-spacing: normal; }
         .login-box button.demo-cta:hover { border-color: var(--gold); background-color: rgba(212, 175, 55, 0.1); }
+        .login-box button.demo-cta.demo-cta-success { border-color: var(--success) !important; background-color: rgba(57, 212, 119, 0.08) !important; }
+        .login-box button.demo-cta.demo-cta-success .demo-cta-icon { background: rgba(57, 212, 119, 0.15) !important; color: var(--success) !important; }
+        .login-box button.demo-cta.demo-cta-success .demo-cta-text strong { color: var(--success) !important; }
         .demo-cta-icon { width: 36px; height: 36px; border-radius: 50%; background: rgba(212, 175, 55, 0.12); color: var(--gold); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .demo-cta-text { display: flex; flex-direction: column; gap: 3px; }
         .demo-cta-text strong { color: var(--champagne); font-size: 12px; letter-spacing: 0.5px; text-transform: lowercase; font-weight: 600; }
