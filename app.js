@@ -89,6 +89,7 @@
         }
         
         let isClientMode = false;
+        let appEntered = false;
 
         function showToast(msg) {
             const toast = document.getElementById('toast-msg');
@@ -160,6 +161,7 @@
                 if(savedMode === 'true') isClientMode = true;
 
                 if(savedKeys) {
+                    appEntered = true;
                     const config = JSON.parse(savedKeys);
                     document.getElementById('login-overlay').style.display = 'none';
                     markLoadingShown();
@@ -169,7 +171,9 @@
                     document.getElementById('login-overlay').style.display = 'none';
                     markLoadingShown();
                     getAuthApp().auth().onAuthStateChanged((user) => {
+                        if(appEntered) return;
                         if(user) {
+                            appEntered = true;
                             const savedRole = localStorage.getItem('luppus_auth_role') || 'empresa';
                             isClientMode = (savedRole === 'cliente');
                             applyClientModeUI();
@@ -182,7 +186,34 @@
             } catch(e) {
                 showLoginScreen();
             }
+            fetchExchangeRates();
         };
+
+        function fetchExchangeRates() {
+            const pairs = [
+                { key: 'USDBRL', valueId: 'quote-usd-value', changeId: 'quote-usd-change', symbol: 'US$' },
+                { key: 'EURBRL', valueId: 'quote-eur-value', changeId: 'quote-eur-change', symbol: '€' },
+                { key: 'GBPBRL', valueId: 'quote-gbp-value', changeId: 'quote-gbp-change', symbol: '£' }
+            ];
+            fetch('https://economia.awesomeapi.com.br/last/USD-BRL,EUR-BRL,GBP-BRL')
+                .then(res => res.json())
+                .then(data => {
+                    pairs.forEach(p => {
+                        const info = data[p.key];
+                        if(!info) return;
+                        const valueEl = document.getElementById(p.valueId);
+                        const changeEl = document.getElementById(p.changeId);
+                        if(valueEl) valueEl.textContent = `${p.symbol} ${parseFloat(info.bid).toFixed(2).replace('.', ',')}`;
+                        if(changeEl) {
+                            const pct = parseFloat(info.pctChange);
+                            changeEl.textContent = `${pct >= 0 ? '+' : ''}${pct.toFixed(2).replace('.', ',')}%`;
+                            changeEl.classList.toggle('positive', pct >= 0);
+                            changeEl.classList.toggle('negative', pct < 0);
+                        }
+                    });
+                })
+                .catch(() => {});
+        }
 
         function showLoginScreen() {
             document.getElementById('login-overlay').style.display = 'flex';
@@ -225,6 +256,7 @@
 
             getAuthApp().auth().signInWithEmailAndPassword(email, password)
                 .then(() => {
+                    appEntered = true;
                     isClientMode = (role === 'cliente');
                     try { localStorage.setItem('luppus_auth_role', role); } catch(e) {}
                     if(btn) {
@@ -295,6 +327,22 @@
             showToast('Verificação de código ainda não está conectada ao back-end.');
         }
 
+        (function setupCnpjAutocomplete() {
+            const input = document.getElementById('signup-company-input');
+            if(!input) return;
+            input.addEventListener('input', () => {
+                const digits = input.value.replace(/\D/g, '');
+                if(digits.length !== 14) return;
+                fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`)
+                    .then(res => { if(!res.ok) throw new Error('not found'); return res.json(); })
+                    .then(data => {
+                        const name = data.razao_social || data.nome_fantasia;
+                        if(name) input.value = name;
+                    })
+                    .catch(() => {});
+            });
+        })();
+
         function openSignup() {
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('signup-overlay').style.display = 'flex';
@@ -317,6 +365,7 @@
             getAuthApp().auth().createUserWithEmailAndPassword(email, password)
                 .then((cred) => cred.user.updateProfile({ displayName: name }))
                 .then(() => {
+                    appEntered = true;
                     try { localStorage.setItem('luppus_auth_role', 'empresa'); } catch(e) {}
                     isClientMode = false;
                     document.getElementById('signup-overlay').style.display = 'none';
@@ -331,6 +380,7 @@
         }
 
         function startDemo() {
+            appEntered = true;
             const fmt = (d) => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
             const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return fmt(d); };
             const daysFromNow = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return fmt(d); };
@@ -406,6 +456,7 @@
                 return;
             }
 
+            appEntered = true;
             const config = { apiKey: apiKey, authDomain: projectId + ".firebaseapp.com", projectId: projectId };
             isClientMode = clientCheck;
 
