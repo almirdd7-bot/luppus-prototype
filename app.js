@@ -1,4 +1,37 @@
-        const WIPE_PIN = "outdd102030"; 
+        const WIPE_PIN = "outdd102030";
+
+        // Projeto oficial do LUPPUS (login real de empresa/cliente) — a apiKey do Firebase
+        // é feita para ficar pública no front-end; a segurança de verdade vem das regras do Firestore.
+        const PROD_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyCPAhfD76uE0eLDtfAZqTW4VjNBv9t8lj4",
+            authDomain: "luppus-painel-financeiro.firebaseapp.com",
+            projectId: "luppus-painel-financeiro",
+            storageBucket: "luppus-painel-financeiro.firebasestorage.app",
+            messagingSenderId: "99405704707",
+            appId: "1:99405704707:web:b321517e43cdce495ba836",
+            measurementId: "G-TEZMYK7TGC"
+        };
+        const AUTH_APP_NAME = 'luppusAuth';
+
+        function getAuthApp() {
+            const existing = firebase.apps.find(a => a.name === AUTH_APP_NAME);
+            return existing || firebase.initializeApp(PROD_FIREBASE_CONFIG, AUTH_APP_NAME);
+        }
+
+        function translateAuthError(code) {
+            const map = {
+                'auth/invalid-email': 'E-mail inválido.',
+                'auth/user-disabled': 'Esta conta foi desativada.',
+                'auth/user-not-found': 'E-mail ou senha incorretos.',
+                'auth/wrong-password': 'E-mail ou senha incorretos.',
+                'auth/invalid-credential': 'E-mail ou senha incorretos.',
+                'auth/too-many-requests': 'Muitas tentativas. Aguarde um momento e tente novamente.',
+                'auth/email-already-in-use': 'Já existe uma conta com este e-mail.',
+                'auth/weak-password': 'A senha precisa ter pelo menos 6 caracteres.',
+                'auth/network-request-failed': 'Falha de conexão. Verifique sua internet.'
+            };
+            return map[code] || 'Não foi possível completar a operação. Tente novamente.';
+        }
 
         let appDB = {
             companies: [{ id: "default", name: "DADOS DA EMPRESA", info: "Luppus API" }],
@@ -133,7 +166,18 @@
                     applyClientModeUI();
                     initFirebase(config);
                 } else {
-                    showLoginScreen();
+                    document.getElementById('login-overlay').style.display = 'none';
+                    markLoadingShown();
+                    getAuthApp().auth().onAuthStateChanged((user) => {
+                        if(user) {
+                            const savedRole = localStorage.getItem('luppus_auth_role') || 'empresa';
+                            isClientMode = (savedRole === 'cliente');
+                            applyClientModeUI();
+                            initFirebase(PROD_FIREBASE_CONFIG, AUTH_APP_NAME);
+                        } else {
+                            hideLoadingOverlay(() => { showLoginScreen(); });
+                        }
+                    });
                 }
             } catch(e) {
                 showLoginScreen();
@@ -174,7 +218,33 @@
             const email = document.getElementById(role + '-email-input').value.trim();
             const password = document.getElementById(role + '-password-input').value.trim();
             if(!email || !password) { showLoginError('Preencha e-mail e senha.'); return; }
-            showLoginError('Login por e-mail e senha ainda não está conectado ao back-end.<br>Use "ver demonstração" abaixo, ou acesse pela aba desenvolvedor enquanto isso.');
+
+            const btn = document.getElementById(role === 'empresa' ? 'btn-login-empresa' : 'btn-login-cliente');
+            const originalText = btn ? btn.textContent : '';
+            if(btn) btn.disabled = true;
+
+            getAuthApp().auth().signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    isClientMode = (role === 'cliente');
+                    try { localStorage.setItem('luppus_auth_role', role); } catch(e) {}
+                    if(btn) {
+                        btn.classList.add('btn-success');
+                        btn.innerHTML = CHECK_SVG;
+                    }
+                    fadeLoginToLoading(() => {
+                        if(btn) {
+                            btn.disabled = false;
+                            btn.classList.remove('btn-success');
+                            btn.textContent = originalText;
+                        }
+                        applyClientModeUI();
+                        setTimeout(() => { initFirebase(PROD_FIREBASE_CONFIG, AUTH_APP_NAME); }, 100);
+                    });
+                })
+                .catch((error) => {
+                    if(btn) btn.disabled = false;
+                    showLoginError(translateAuthError(error.code));
+                });
         }
 
         let recoveryChannel = 'email';
@@ -204,9 +274,22 @@
         function sendRecoveryCode() {
             const contact = document.getElementById('recovery-contact-input').value.trim();
             if(!contact) { showToast('Preencha o campo de contato.'); return; }
+
+            if(recoveryChannel === 'email') {
+                getAuthApp().auth().sendPasswordResetEmail(contact)
+                    .then(() => {
+                        showToast('Enviamos um link de redefinição de senha para o seu e-mail.');
+                        closeForgotPassword();
+                    })
+                    .catch((error) => {
+                        showToast(translateAuthError(error.code));
+                    });
+                return;
+            }
+
             document.getElementById('recovery-step-request').style.display = 'none';
             document.getElementById('recovery-step-verify').style.display = 'block';
-            document.getElementById('recovery-sent-note').textContent = `Envio de código por ${recoveryChannel === 'email' ? 'e-mail' : 'WhatsApp'} ainda não está conectado a um serviço real — essa tela já fica pronta para quando o back-end existir.`;
+            document.getElementById('recovery-sent-note').textContent = 'Envio de código por WhatsApp ainda não está conectado a um serviço real — essa tela já fica pronta para quando o back-end existir.';
         }
         function verifyRecoveryCode() {
             showToast('Verificação de código ainda não está conectada ao back-end.');
@@ -221,7 +304,30 @@
             document.getElementById('login-overlay').style.display = 'flex';
         }
         function doSignup() {
-            showToast('Cadastro ainda não está conectado ao back-end — aguardando integração com o Kaike.');
+            const name = document.getElementById('signup-name-input').value.trim();
+            const company = document.getElementById('signup-company-input').value.trim();
+            const email = document.getElementById('signup-email-input').value.trim();
+            const password = document.getElementById('signup-password-input').value.trim();
+            const passwordConfirm = document.getElementById('signup-password-confirm-input').value.trim();
+
+            if(!name || !company || !email || !password) { showToast('Preencha todos os campos.'); return; }
+            if(password !== passwordConfirm) { showToast('As senhas não coincidem.'); return; }
+            if(password.length < 6) { showToast('A senha precisa ter pelo menos 6 caracteres.'); return; }
+
+            getAuthApp().auth().createUserWithEmailAndPassword(email, password)
+                .then((cred) => cred.user.updateProfile({ displayName: name }))
+                .then(() => {
+                    try { localStorage.setItem('luppus_auth_role', 'empresa'); } catch(e) {}
+                    isClientMode = false;
+                    document.getElementById('signup-overlay').style.display = 'none';
+                    showToast('Conta criada com sucesso!');
+                    markLoadingShown();
+                    applyClientModeUI();
+                    initFirebase(PROD_FIREBASE_CONFIG, AUTH_APP_NAME);
+                })
+                .catch((error) => {
+                    showToast(translateAuthError(error.code));
+                });
         }
 
         function startDemo() {
@@ -364,8 +470,14 @@
             try {
                 localStorage.removeItem('luppus_node_keys');
                 localStorage.removeItem('luppus_client_mode');
+                localStorage.removeItem('luppus_auth_role');
             } catch(e) {}
-            window.location.reload();
+            const authApp = firebase.apps.find(a => a.name === AUTH_APP_NAME);
+            if(authApp) {
+                authApp.auth().signOut().finally(() => window.location.reload());
+            } else {
+                window.location.reload();
+            }
         }
         
         function applyClientModeUI() {
@@ -374,10 +486,16 @@
             }
         }
 
-        function initFirebase(config) {
+        function initFirebase(config, appName) {
             try {
-                if (!firebase.apps.length) firebase.initializeApp(config);
-                cloudDB = firebase.firestore();
+                let app;
+                if(appName) {
+                    app = firebase.apps.find(a => a.name === appName) || firebase.initializeApp(config, appName);
+                } else {
+                    if (!firebase.apps.length) firebase.initializeApp(config);
+                    app = firebase.app();
+                }
+                cloudDB = app.firestore();
 
                 const docRef = cloudDB.collection("luppus_system").doc("node_state");
                 docRef.onSnapshot((doc) => {
@@ -416,7 +534,9 @@
         function doLogoutFallback() {
             document.getElementById('loading-overlay').style.display = 'none';
             document.getElementById('login-overlay').style.display = 'flex';
-            try { localStorage.removeItem('luppus_node_keys'); localStorage.removeItem('luppus_client_mode'); } catch(e) {}
+            try { localStorage.removeItem('luppus_node_keys'); localStorage.removeItem('luppus_client_mode'); localStorage.removeItem('luppus_auth_role'); } catch(e) {}
+            const authApp = firebase.apps.find(a => a.name === AUTH_APP_NAME);
+            if(authApp) authApp.auth().signOut();
         }
 
         function saveToCloud() {

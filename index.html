@@ -26,6 +26,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -67,7 +68,7 @@
                     <input type="password" id="empresa-password-input" placeholder="SENHA" onkeypress="if(event.key === 'Enter') doPasswordLogin('empresa')">
                     <button type="button" class="password-toggle" onclick="togglePasswordVisibility('empresa-password-input', this)" aria-label="mostrar senha"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
                 </div>
-                <button type="button" onclick="doPasswordLogin('empresa')">Entrar</button>
+                <button type="button" id="btn-login-empresa" onclick="doPasswordLogin('empresa')">Entrar</button>
                 <button type="button" class="text-link" onclick="openForgotPassword()">esqueceu a senha?</button>
                 <button type="button" class="text-link" onclick="openSignup()">criar conta</button>
             </div>
@@ -79,7 +80,7 @@
                     <input type="password" id="cliente-password-input" placeholder="SENHA" onkeypress="if(event.key === 'Enter') doPasswordLogin('cliente')">
                     <button type="button" class="password-toggle" onclick="togglePasswordVisibility('cliente-password-input', this)" aria-label="mostrar senha"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
                 </div>
-                <button type="button" onclick="doPasswordLogin('cliente')">Entrar</button>
+                <button type="button" id="btn-login-cliente" onclick="doPasswordLogin('cliente')">Entrar</button>
                 <button type="button" class="text-link" onclick="openForgotPassword()">esqueceu a senha?</button>
                 <button type="button" class="text-link" onclick="openSignup()">criar conta</button>
             </div>
