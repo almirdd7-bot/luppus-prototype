@@ -363,6 +363,9 @@
             const contact = document.getElementById('recovery-contact-input').value.trim();
             if(!contact) { showToast('Preencha o campo de e-mail.'); return; }
 
+            const btn = document.getElementById('recovery-submit-btn');
+            if(btn) btn.disabled = true;
+
             getAuthApp().auth().sendPasswordResetEmail(contact)
                 .then(() => {
                     showToast('Enviamos um link de redefinição de senha para o seu e-mail.');
@@ -370,7 +373,8 @@
                 })
                 .catch((error) => {
                     showToast(translateAuthError(error.code));
-                });
+                })
+                .finally(() => { if(btn) btn.disabled = false; });
         }
 
         (function setupCnpjAutocomplete() {
@@ -408,6 +412,9 @@
             if(password !== passwordConfirm) { showToast('As senhas não coincidem.'); return; }
             if(password.length < 6) { showToast('A senha precisa ter pelo menos 6 caracteres.'); return; }
 
+            const btn = document.getElementById('signup-submit-btn');
+            if(btn) btn.disabled = true;
+
             getAuthApp().auth().createUserWithEmailAndPassword(email, password)
                 .then((cred) => cred.user.updateProfile({ displayName: name }))
                 .then(() => {
@@ -423,6 +430,7 @@
                     fetchMarketIndices();
                 })
                 .catch((error) => {
+                    if(btn) btn.disabled = false;
                     showToast(translateAuthError(error.code));
                 });
         }

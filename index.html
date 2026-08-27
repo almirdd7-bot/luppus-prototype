@@ -117,7 +117,7 @@
 
             <div id="recovery-step-request" style="margin-top: 24px;">
                 <input type="email" id="recovery-contact-input" placeholder="seu e-mail cadastrado">
-                <button type="button" onclick="sendRecoveryCode()">Enviar link</button>
+                <button type="button" id="recovery-submit-btn" onclick="sendRecoveryCode()">Enviar link</button>
             </div>
 
             <button type="button" class="outline-btn" style="width: 100%; margin-top: 15px;" onclick="closeForgotPassword()">Cancelar</button>
@@ -137,7 +137,7 @@
                 <button type="button" class="password-toggle" onclick="togglePasswordVisibility('signup-password-input', this)" aria-label="mostrar senha"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
                 </div>
             <input type="password" id="signup-password-confirm-input" placeholder="CONFIRMAR SENHA">
-            <button type="button" onclick="doSignup()">Criar conta</button>
+            <button type="button" id="signup-submit-btn" onclick="doSignup()">Criar conta</button>
             <button type="button" class="outline-btn" style="width: 100%; margin-top: 10px;" onclick="closeSignup()">Cancelar</button>
         </div>
     </div>
