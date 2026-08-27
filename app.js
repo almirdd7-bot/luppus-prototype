@@ -1393,8 +1393,13 @@
             if(!str) return null;
             const parts = str.trim().split('/');
             if(parts.length !== 3) return null;
-            const d = new Date(parts[2], parts[1] - 1, parts[0]);
-            return isNaN(d.getTime()) ? null : d;
+            const day = Number(parts[0]), month = Number(parts[1]), year = Number(parts[2]);
+            const d = new Date(year, month - 1, day);
+            if(isNaN(d.getTime())) return null;
+            // new Date() rola datas inexistentes (ex: 31/02) pro mês seguinte em vez de rejeitar —
+            // conferimos se os componentes batem pra pegar esse caso.
+            if(d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) return null;
+            return d;
         }
 
         function vaultExpiryBadge(expiry) {
@@ -1613,6 +1618,7 @@
             const file = document.getElementById('receipt').files[0];
 
             if (!desc || isNaN(amount) || amount <= 0) { showToast("Preencha descrição e valor."); return; }
+            if (!parseBRDate(dateVal)) { showToast("Data inválida. Use DD/MM/AAAA."); return; }
             if (file && file.type === 'application/pdf' && file.size > MAX_FILE_BYTES) { showToast("PDF acima de 500KB — reduza o tamanho do arquivo antes de anexar."); return; }
 
             const finish = (receiptObj) => {
