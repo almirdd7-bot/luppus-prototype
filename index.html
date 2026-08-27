@@ -21,22 +21,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LUPPUS | find the signal</title>
-    
-    <!-- Core Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-    <!-- Jspreadsheet CE (Planilhas) -->
-    <script src="https://bossanova.uk/jspreadsheet/v4/jexcel.js"></script>
+    <!-- CSS carrega primeiro para a tela de login aparecer estilizada o quanto antes -->
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://bossanova.uk/jspreadsheet/v4/jexcel.css" type="text/css" />
-    <script src="https://jsuites.net/v4/jsuites.js"></script>
     <link rel="stylesheet" href="https://jsuites.net/v4/jsuites.css" type="text/css" />
 
-    <link rel="stylesheet" href="style.css">
+    <!-- Scripts com "defer": baixam em paralelo sem travar a primeira renderização da página -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://bossanova.uk/jspreadsheet/v4/jexcel.js" defer></script>
+    <script src="https://jsuites.net/v4/jsuites.js" defer></script>
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
@@ -1249,7 +1248,7 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js" defer></script>
 
     <!--Start of Tawk.to Script-->
     <script type="text/javascript">
