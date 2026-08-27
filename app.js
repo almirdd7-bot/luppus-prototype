@@ -178,6 +178,7 @@
                             isClientMode = (savedRole === 'cliente');
                             applyClientModeUI();
                             initFirebase(PROD_FIREBASE_CONFIG, AUTH_APP_NAME);
+                            fetchMarketIndices();
                         } else {
                             hideLoadingOverlay(() => { showLoginScreen(); });
                         }
@@ -213,6 +214,70 @@
                     });
                 })
                 .catch(() => {});
+        }
+
+        // Índices de bolsa: atualizados no máx. 2x/dia (madrugada/fim de tarde), compartilhado
+        // entre todos os usuários via Firestore, para não estourar o limite de 25 consultas/dia da Alpha Vantage.
+        const ALPHA_VANTAGE_KEY = '7B0BMN54GWJ6WE5R';
+        const MARKET_INDICES = [
+            { symbol: 'QQQ', label: 'NASDAQ', changeId: 'quote-nasdaq-change' },
+            { symbol: 'EWG', label: 'DAX (Frankfurt)', changeId: 'quote-dax-change' },
+            { symbol: 'EWU', label: 'FTSE 100', changeId: 'quote-ftse-change' }
+        ];
+
+        function getMarketSlotKey() {
+            const shifted = new Date(Date.now() - 6 * 60 * 60 * 1000);
+            const slot = shifted.getHours() < 12 ? 'AM' : 'PM';
+            return `${shifted.getFullYear()}-${shifted.getMonth()}-${shifted.getDate()}-${slot}`;
+        }
+
+        function renderMarketIndices(indices) {
+            MARKET_INDICES.forEach(m => {
+                const pct = indices[m.label];
+                const el = document.getElementById(m.changeId);
+                if(el && typeof pct === 'number') {
+                    el.textContent = `${pct >= 0 ? '+' : ''}${pct.toFixed(2).replace('.', ',')}%`;
+                    el.classList.toggle('positive', pct >= 0);
+                    el.classList.toggle('negative', pct < 0);
+                }
+            });
+        }
+
+        function refreshMarketIndices(marketRef, slotKey) {
+            Promise.all(MARKET_INDICES.map(m =>
+                fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${m.symbol}&apikey=${ALPHA_VANTAGE_KEY}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const q = data['Global Quote'];
+                        if(!q || !q['10. change percent']) return null;
+                        return { label: m.label, pct: parseFloat(q['10. change percent']) };
+                    })
+                    .catch(() => null)
+            )).then(results => {
+                const indices = {};
+                results.forEach(r => { if(r) indices[r.label] = r.pct; });
+                if(Object.keys(indices).length > 0) {
+                    marketRef.set({ slot: slotKey, indices }).catch(() => {});
+                    renderMarketIndices(indices);
+                }
+            });
+        }
+
+        function fetchMarketIndices() {
+            const marketRef = getAuthApp().firestore().collection('luppus_system').doc('market_data');
+            const slotKey = getMarketSlotKey();
+            // onSnapshot (em vez de .get()) porque tolera melhor a conexão ainda "esquentando"
+            // logo após o login, evitando o erro transitório "client is offline" de uma leitura única.
+            const unsubscribe = marketRef.onSnapshot((doc) => {
+                unsubscribe();
+                const data = doc.exists ? doc.data() : null;
+                if(data && data.slot === slotKey && data.indices) {
+                    renderMarketIndices(data.indices);
+                } else {
+                    if(data && data.indices) renderMarketIndices(data.indices);
+                    refreshMarketIndices(marketRef, slotKey);
+                }
+            }, () => {});
         }
 
         function showLoginScreen() {
@@ -271,6 +336,7 @@
                         }
                         applyClientModeUI();
                         setTimeout(() => { initFirebase(PROD_FIREBASE_CONFIG, AUTH_APP_NAME); }, 100);
+                        fetchMarketIndices();
                     });
                 })
                 .catch((error) => {
@@ -373,6 +439,7 @@
                     markLoadingShown();
                     applyClientModeUI();
                     initFirebase(PROD_FIREBASE_CONFIG, AUTH_APP_NAME);
+                    fetchMarketIndices();
                 })
                 .catch((error) => {
                     showToast(translateAuthError(error.code));
