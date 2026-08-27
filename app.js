@@ -542,6 +542,12 @@
             const myGen = ++tourRenderGen;
             const step = TOUR_STEPS[tourStepIndex];
             switchView(step.view);
+            // No celular a barra lateral fica escondida por padrão — abre ela pra esse passo específico
+            // poder ser destacado, já que switchView() a fecha de novo automaticamente.
+            if(step.selector === '.sidebar') {
+                const navToggle = document.getElementById('nav-toggle');
+                if(navToggle) navToggle.checked = true;
+            }
             setTimeout(() => {
                 if(myGen !== tourRenderGen) return;
                 const target = document.querySelector(step.selector);
