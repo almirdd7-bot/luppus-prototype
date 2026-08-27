@@ -524,8 +524,8 @@
             { view: 'relatorios', selector: '#view-relatorios .smart-search-box', title: 'Busca inteligente', text: 'Digite em português o que procura, como "custos com infraestrutura", ou use os filtros rápidos ao lado.' },
             { view: 'planilhas', selector: '#templates-panel-card', title: 'Planilhas com modelos prontos', text: 'Controle de estoque, cronogramas, contratos e mais — aplique um modelo pronto com um clique.' },
             { view: 'cofre', selector: '#view-cofre .dashboard-lower-grid', title: 'Cofre digital', text: 'Guarde contratos e certidões com data de validade — o sistema avisa antes de vencer.' },
-            { view: 'config', selector: '.config-tabs', title: 'Configurações por perfil', text: 'Cada tipo de acesso (cliente, empresa ou dev) vê só as abas que faz sentido pra ele.' },
-            { view: 'suporte', selector: '.faq-tabs', title: 'Dúvidas? Estamos aqui', text: 'FAQ organizado por área, e um chat ao vivo pra falar com a gente na hora.' }
+            { view: 'config', selector: '.config-tabs', title: 'Configurações por perfil', text: 'Cada tipo de acesso (cliente, empresa ou dev) vê só as abas que fazem sentido para ele.' },
+            { view: 'suporte', selector: '.faq-tabs', title: 'Dúvidas? Estamos aqui', text: 'FAQ organizado por área, e um chat ao vivo para falar com a gente na hora.' }
         ];
         let tourStepIndex = 0;
         let tourRenderGen = 0;
@@ -1798,7 +1798,7 @@
             sheet.savedAt = getTodayDate() + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             saveToCloud();
             renderSheetMeta();
-            showToast('Planilha Salva.');
+            showToast('Planilha salva.');
         }
 
         function exportSpreadsheet() { if(mySpreadsheet) mySpreadsheet.download(); }
