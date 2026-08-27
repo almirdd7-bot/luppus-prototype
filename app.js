@@ -1324,6 +1324,57 @@
             return `<span class="chip chip-success">válido até ${expiry}</span>`;
         }
 
+        // Comprime imagens grandes (reduzindo qualidade e depois dimensões) até caberem no limite,
+        // em vez de simplesmente rejeitar o arquivo. PDFs não têm como ser comprimidos no navegador.
+        const MAX_FILE_BYTES = 512000;
+        function fileToDataURLCompressed(file, maxBytes) {
+            return new Promise((resolve, reject) => {
+                if (!file.type.startsWith('image/') || file.size <= maxBytes) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        // Fotos de celular costumam vir enormes (4000px+) — reduzir o tamanho
+                        // logo de início evita travar o navegador comprimindo em resolução total.
+                        const MAX_DIMENSION = 1600;
+                        const baseScale = Math.min(1, MAX_DIMENSION / Math.max(img.width, img.height));
+                        let quality = 0.85, scale = 1, attempts = 0;
+                        const MAX_ATTEMPTS = 8; // garante que sempre termina, mesmo com imagens que não comprimem bem
+                        const tryCompress = () => {
+                            attempts++;
+                            const canvas = document.createElement('canvas');
+                            canvas.width = Math.max(1, Math.round(img.width * baseScale * scale));
+                            canvas.height = Math.max(1, Math.round(img.height * baseScale * scale));
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                            const approxBytes = dataUrl.length * 0.75;
+                            if (approxBytes <= maxBytes || attempts >= MAX_ATTEMPTS || (quality <= 0.35 && scale <= 0.35)) {
+                                resolve(dataUrl);
+                            } else if (quality > 0.35) {
+                                quality -= 0.15;
+                                setTimeout(tryCompress, 0);
+                            } else {
+                                scale -= 0.15;
+                                setTimeout(tryCompress, 0);
+                            }
+                        };
+                        tryCompress();
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
         function processVaultUpload() {
             const name = document.getElementById('vault-name').value.trim();
             const category = document.getElementById('vault-category').value;
@@ -1332,22 +1383,20 @@
             const file = fileInput.files[0];
 
             if(!name || !file) { showToast("Preencha nome e anexe documento."); return; }
-            if(file.size > 512000) { showToast("Limite de 500kb excedido."); return; }
+            if(file.type === 'application/pdf' && file.size > MAX_FILE_BYTES) { showToast("PDF acima de 500KB — reduza o tamanho do arquivo antes de anexar."); return; }
             if(expiry && !parseBRDate(expiry)) { showToast("Data de validade inválida. Use DD/MM/AAAA."); return; }
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
+            fileToDataURLCompressed(file, MAX_FILE_BYTES).then((dataUrl) => {
                 if(!appDB.vault) appDB.vault = {};
                 if(!appDB.vault[appDB.currentCompanyId]) appDB.vault[appDB.currentCompanyId] = [];
-                appDB.vault[appDB.currentCompanyId].push({ date: getTodayDate(), name: name, category: category, expiry: expiry, file: { data: e.target.result, fname: file.name, mime: file.type } });
+                appDB.vault[appDB.currentCompanyId].push({ date: getTodayDate(), name: name, category: category, expiry: expiry, file: { data: dataUrl, fname: file.name, mime: file.type } });
                 saveToCloud();
                 document.getElementById('vault-name').value = '';
                 document.getElementById('vault-expiry').value = '';
                 fileInput.value = '';
                 renderVault();
                 showToast("Salvo no Cofre.");
-            };
-            reader.readAsDataURL(file);
+            }).catch(() => showToast("Não foi possível processar o arquivo."));
         }
 
         function renderVault() {
@@ -1471,7 +1520,7 @@
             const file = document.getElementById('receipt').files[0];
 
             if (!desc || isNaN(amount) || amount <= 0) { showToast("Preencha descrição e valor."); return; }
-            if (file && file.size > 512000) { showToast("Limite de 500KB excedido."); return; }
+            if (file && file.type === 'application/pdf' && file.size > MAX_FILE_BYTES) { showToast("PDF acima de 500KB — reduza o tamanho do arquivo antes de anexar."); return; }
 
             const finish = (receiptObj) => {
                 if (!appDB.transactions[appDB.currentCompanyId]) appDB.transactions[appDB.currentCompanyId] = [];
@@ -1496,9 +1545,9 @@
             };
 
             if(file) {
-                const reader = new FileReader();
-                reader.onload = (e) => finish({ data: e.target.result, name: file.name });
-                reader.readAsDataURL(file);
+                fileToDataURLCompressed(file, MAX_FILE_BYTES)
+                    .then((dataUrl) => finish({ data: dataUrl, name: file.name }))
+                    .catch(() => showToast("Não foi possível processar o arquivo."));
             } else {
                 finish(null);
             }

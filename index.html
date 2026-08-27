@@ -572,7 +572,7 @@
                             <div class="form-group"><label>categoria</label><select id="vault-category"><option>Contrato</option><option>Nota Fiscal</option><option>Comprovante</option><option>Certidão</option><option>Outro</option></select></div>
                             <div class="form-group"><label>validade (opcional)</label><input type="text" id="vault-expiry" placeholder="DD/MM/AAAA"></div>
                         </div>
-                        <div class="form-group"><label>Arquivo (PDF/Img - Máx 500kb)</label><input type="file" id="vault-file" accept=".pdf, image/jpeg, image/png"></div>
+                        <div class="form-group"><label>Arquivo (imagem comprimida automaticamente; PDF até 500KB)</label><input type="file" id="vault-file" accept=".pdf, image/jpeg, image/png"></div>
                         <button class="action-btn" style="width: 100%;" onclick="processVaultUpload()">salvar no cofre</button>
                     </div>
                     <div class="panel-card" style="grid-column: span 1;">
@@ -1069,7 +1069,7 @@
                             </details>
                             <details class="faq-item">
                                 <summary>Meu comprovante não sobe / aparece um erro ao anexar.</summary>
-                                <p>O limite por arquivo é de 500KB — pequeno de propósito, para não pesar o sistema. Se for uma foto ou PDF escaneado em alta resolução, ele passa desse limite. Tente um print em vez de foto, ou reduza a qualidade do arquivo antes de anexar.</p>
+                                <p>Fotos e imagens são comprimidas automaticamente para caber no limite de 500KB — não precisa fazer nada. Só um PDF acima de 500KB continua sendo recusado, já que o navegador não consegue comprimir PDF sozinho; nesse caso, reduza o arquivo antes de anexar ou envie como foto.</p>
                             </details>
                             <details class="faq-item">
                                 <summary>Importei um extrato bancário (OFX) mas os lançamentos não apareceram sozinhos.</summary>
