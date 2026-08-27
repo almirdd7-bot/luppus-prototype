@@ -721,6 +721,14 @@
             if(activePanel) activePanel.classList.add('active');
         }
 
+        function openSupportChat() {
+            if(typeof Tawk_API !== 'undefined' && Tawk_API.maximize) {
+                Tawk_API.maximize();
+            } else {
+                showToast('Chat carregando... tente novamente em instantes.');
+            }
+        }
+
         function switchConfigTab(tab) {
             document.querySelectorAll('.config-tab').forEach(el => el.classList.remove('active'));
             const activeTab = document.querySelector('.config-tab[data-tab="' + tab + '"]');

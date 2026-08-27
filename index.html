@@ -1237,11 +1237,10 @@
                                 <div class="chat-bubble chat-bubble-in">Olá! Como podemos ajudar hoje?</div>
                             </div>
                             <div class="chat-mock-input">
-                                <input type="text" placeholder="Digite sua mensagem..." disabled>
-                                <button class="action-btn" type="button" disabled>enviar</button>
+                                <button class="action-btn" type="button" style="width: 100%;" onclick="openSupportChat()">abrir chat ao vivo</button>
                             </div>
                         </div>
-                        <p class="support-note">Chat ainda não conectado — visual ilustrativo (placeholder).</p>
+                        <p class="support-note">Chat ao vivo real — normalmente respondido em minutos durante o horário comercial.</p>
                     </div>
                 </div>
             </div>
@@ -1250,5 +1249,19 @@
     </div>
 
     <script src="app.js"></script>
+
+    <!--Start of Tawk.to Script-->
+    <script type="text/javascript">
+    var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+    (function(){
+    var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+    s1.async=true;
+    s1.src='https://embed.tawk.to/6a8f8306dcccab344b66e7e9/1k109fkho';
+    s1.charset='UTF-8';
+    s1.setAttribute('crossorigin','*');
+    s0.parentNode.insertBefore(s1,s0);
+    })();
+    </script>
+    <!--End of Tawk.to Script-->
 </body>
 </html>
