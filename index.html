@@ -62,7 +62,7 @@
 
             <!-- ABA EMPRESA -->
             <div id="login-panel-empresa" class="login-tab-panel active">
-                <input type="text" id="empresa-email-input" placeholder="E-MAIL" autofocus onkeypress="if(event.key === 'Enter') doPasswordLogin('empresa')">
+                <input type="email" id="empresa-email-input" placeholder="E-MAIL" autofocus onkeypress="if(event.key === 'Enter') doPasswordLogin('empresa')">
                 <div class="password-field">
                     <input type="password" id="empresa-password-input" placeholder="SENHA" onkeypress="if(event.key === 'Enter') doPasswordLogin('empresa')">
                     <button type="button" class="password-toggle" onclick="togglePasswordVisibility('empresa-password-input', this)" aria-label="mostrar senha"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
@@ -74,7 +74,7 @@
 
             <!-- ABA CLIENTE -->
             <div id="login-panel-cliente" class="login-tab-panel">
-                <input type="text" id="cliente-email-input" placeholder="E-MAIL" onkeypress="if(event.key === 'Enter') doPasswordLogin('cliente')">
+                <input type="email" id="cliente-email-input" placeholder="E-MAIL" onkeypress="if(event.key === 'Enter') doPasswordLogin('cliente')">
                 <div class="password-field">
                     <input type="password" id="cliente-password-input" placeholder="SENHA" onkeypress="if(event.key === 'Enter') doPasswordLogin('cliente')">
                     <button type="button" class="password-toggle" onclick="togglePasswordVisibility('cliente-password-input', this)" aria-label="mostrar senha"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
@@ -86,7 +86,7 @@
 
             <!-- ABA DESENVOLVEDOR -->
             <div id="login-panel-dev" class="login-tab-panel">
-                <input type="text" id="dev-email-input" placeholder="E-MAIL" onkeypress="if(event.key === 'Enter') doPasswordLogin('dev')">
+                <input type="email" id="dev-email-input" placeholder="E-MAIL" onkeypress="if(event.key === 'Enter') doPasswordLogin('dev')">
                 <div class="password-field">
                     <input type="password" id="dev-password-input" placeholder="SENHA" onkeypress="if(event.key === 'Enter') doPasswordLogin('dev')">
                     <button type="button" class="password-toggle" onclick="togglePasswordVisibility('dev-password-input', this)" aria-label="mostrar senha"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
@@ -116,7 +116,7 @@
             <p>Enviaremos um link de redefinição para o seu e-mail</p>
 
             <div id="recovery-step-request" style="margin-top: 24px;">
-                <input type="text" id="recovery-contact-input" placeholder="seu e-mail cadastrado">
+                <input type="email" id="recovery-contact-input" placeholder="seu e-mail cadastrado">
                 <button type="button" onclick="sendRecoveryCode()">Enviar link</button>
             </div>
 
@@ -131,7 +131,7 @@
             <p>Cadastro inicial — sujeito a mudanças</p>
             <input type="text" id="signup-name-input" placeholder="NOME COMPLETO">
             <input type="text" id="signup-company-input" placeholder="EMPRESA / CNPJ">
-            <input type="text" id="signup-email-input" placeholder="E-MAIL">
+            <input type="email" id="signup-email-input" placeholder="E-MAIL">
             <div class="password-field">
                 <input type="password" id="signup-password-input" placeholder="SENHA">
                 <button type="button" class="password-toggle" onclick="togglePasswordVisibility('signup-password-input', this)" aria-label="mostrar senha"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
@@ -595,11 +595,11 @@
                                 </div>
                                 <div class="settings-row">
                                     <div class="settings-row-label">e-mail de contato</div>
-                                    <div class="settings-row-control"><input type="text" id="contact-email-input" placeholder="voce@empresa.com"></div>
+                                    <div class="settings-row-control"><input type="email" id="contact-email-input" placeholder="voce@empresa.com"></div>
                                 </div>
                                 <div class="settings-row">
                                     <div class="settings-row-label">WhatsApp para contato</div>
-                                    <div class="settings-row-control"><input type="text" placeholder="(00) 00000-0000"></div>
+                                    <div class="settings-row-control"><input type="tel" placeholder="(00) 00000-0000"></div>
                                 </div>
                                 <div class="settings-row">
                                     <div class="settings-row-label">formato de data</div>
