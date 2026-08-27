@@ -1438,7 +1438,9 @@
             });
         }
 
+        let vaultUploadInFlight = false;
         function processVaultUpload() {
+            if(vaultUploadInFlight) return;
             const name = document.getElementById('vault-name').value.trim();
             const category = document.getElementById('vault-category').value;
             const expiry = document.getElementById('vault-expiry').value.trim();
@@ -1448,6 +1450,11 @@
             if(!name || !file) { showToast("Preencha nome e anexe documento."); return; }
             if(file.type === 'application/pdf' && file.size > MAX_FILE_BYTES) { showToast("PDF acima de 500KB — reduza o tamanho do arquivo antes de anexar."); return; }
             if(expiry && !parseBRDate(expiry)) { showToast("Data de validade inválida. Use DD/MM/AAAA."); return; }
+
+            vaultUploadInFlight = true;
+            const btn = document.getElementById('vault-submit-btn');
+            const originalLabel = btn ? btn.innerText : '';
+            if(btn) { btn.disabled = true; btn.innerText = 'processando...'; }
 
             fileToDataURLCompressed(file, MAX_FILE_BYTES).then((dataUrl) => {
                 if(!appDB.vault) appDB.vault = {};
@@ -1459,7 +1466,8 @@
                 fileInput.value = '';
                 renderVault();
                 showToast("Salvo no Cofre.");
-            }).catch(() => showToast("Não foi possível processar o arquivo."));
+            }).catch(() => showToast("Não foi possível processar o arquivo."))
+            .finally(() => { vaultUploadInFlight = false; if(btn) { btn.disabled = false; btn.innerText = originalLabel; } });
         }
 
         function renderVault() {
@@ -1573,7 +1581,9 @@
             }
         }
 
+        let transactionSubmitInFlight = false;
         function processTransaction() {
+            if(transactionSubmitInFlight) return;
             let dateVal = document.getElementById('entry-date').value.trim(); if(!dateVal) dateVal = getTodayDate();
             const desc = document.getElementById('desc').value.trim();
             const type = document.getElementById('type').value;
@@ -1608,9 +1618,15 @@
             };
 
             if(file) {
+                transactionSubmitInFlight = true;
+                const btn = document.getElementById('entry-submit-btn');
+                const originalLabel = btn ? btn.innerText : '';
+                if(btn) { btn.disabled = true; btn.innerText = 'processando...'; }
+
                 fileToDataURLCompressed(file, MAX_FILE_BYTES)
-                    .then((dataUrl) => finish({ data: dataUrl, name: file.name }))
-                    .catch(() => showToast("Não foi possível processar o arquivo."));
+                    .then((dataUrl) => { finish({ data: dataUrl, name: file.name }); })
+                    .catch(() => { showToast("Não foi possível processar o arquivo."); if(btn) btn.innerText = originalLabel; })
+                    .finally(() => { transactionSubmitInFlight = false; if(btn) btn.disabled = false; });
             } else {
                 finish(null);
             }
