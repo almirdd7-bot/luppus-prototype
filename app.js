@@ -157,35 +157,22 @@
 
         window.onload = function() {
             try {
-                const savedKeys = localStorage.getItem('luppus_node_keys');
-                const savedMode = localStorage.getItem('luppus_client_mode');
-                if(savedMode === 'true') { isClientMode = true; userRole = 'cliente'; } else { userRole = 'dev'; }
-
-                if(savedKeys) {
-                    appEntered = true;
-                    const config = JSON.parse(savedKeys);
-                    document.getElementById('login-overlay').style.display = 'none';
-                    markLoadingShown();
-                    applyClientModeUI();
-                    initFirebase(config);
-                } else {
-                    document.getElementById('login-overlay').style.display = 'none';
-                    markLoadingShown();
-                    getAuthApp().auth().onAuthStateChanged((user) => {
-                        if(appEntered) return;
-                        if(user) {
-                            appEntered = true;
-                            const savedRole = localStorage.getItem('luppus_auth_role') || 'empresa';
-                            isClientMode = (savedRole === 'cliente');
-                            userRole = savedRole;
-                            applyClientModeUI();
-                            initFirebase(PROD_FIREBASE_CONFIG, AUTH_APP_NAME);
-                            fetchMarketIndices();
-                        } else {
-                            hideLoadingOverlay(() => { showLoginScreen(); });
-                        }
-                    });
-                }
+                document.getElementById('login-overlay').style.display = 'none';
+                markLoadingShown();
+                getAuthApp().auth().onAuthStateChanged((user) => {
+                    if(appEntered) return;
+                    if(user) {
+                        appEntered = true;
+                        const savedRole = localStorage.getItem('luppus_auth_role') || 'empresa';
+                        isClientMode = (savedRole === 'cliente');
+                        userRole = savedRole;
+                        applyClientModeUI();
+                        initFirebase(PROD_FIREBASE_CONFIG, AUTH_APP_NAME);
+                        fetchMarketIndices();
+                    } else {
+                        hideLoadingOverlay(() => { showLoginScreen(); });
+                    }
+                });
             } catch(e) {
                 showLoginScreen();
             }
@@ -312,21 +299,31 @@
                 : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
         }
 
+        const ALLOWED_DEV_EMAILS = ['devkaique@luppus.com', 'devalmir@luppus.com'];
+        const LOGIN_BTN_IDS = { empresa: 'btn-login-empresa', cliente: 'btn-login-cliente', dev: 'btn-login-dev' };
+
         function doPasswordLogin(role) {
             const email = document.getElementById(role + '-email-input').value.trim();
             const password = document.getElementById(role + '-password-input').value.trim();
             if(!email || !password) { showLoginError('Preencha e-mail e senha.'); return; }
 
-            const btn = document.getElementById(role === 'empresa' ? 'btn-login-empresa' : 'btn-login-cliente');
+            if(role === 'dev' && !ALLOWED_DEV_EMAILS.includes(email.toLowerCase())) {
+                showLoginError('Este e-mail não tem acesso à área de desenvolvedor.');
+                return;
+            }
+
+            const btn = document.getElementById(LOGIN_BTN_IDS[role]);
             const originalText = btn ? btn.textContent : '';
             if(btn) btn.disabled = true;
 
             getAuthApp().auth().signInWithEmailAndPassword(email, password)
                 .then(() => {
                     appEntered = true;
-                    isClientMode = (role === 'cliente');
-                    userRole = role;
-                    try { localStorage.setItem('luppus_auth_role', role); } catch(e) {}
+                    const clientCheckEl = document.getElementById('client-mode-check');
+                    const effectiveRole = (role === 'dev' && clientCheckEl && clientCheckEl.checked) ? 'cliente' : role;
+                    isClientMode = (effectiveRole === 'cliente');
+                    userRole = effectiveRole;
+                    try { localStorage.setItem('luppus_auth_role', effectiveRole); } catch(e) {}
                     if(btn) {
                         btn.classList.add('btn-success');
                         btn.innerHTML = CHECK_SVG;
@@ -492,59 +489,6 @@
             renderVault();
         }
 
-        function doKeyLogin() {
-            const apiKeyInput = document.getElementById('api-key-input');
-            const projIdInput = document.getElementById('project-id-input');
-            
-            if(!apiKeyInput || !projIdInput) return;
-            
-            const apiKey = apiKeyInput.value.trim();
-            const projectId = projIdInput.value.trim();
-            const clientCheckEl = document.getElementById('client-mode-check');
-            const clientCheck = clientCheckEl ? clientCheckEl.checked : false;
-
-            if(!apiKey || !projectId) {
-                showLoginError("Por favor, preencha a API Key e o Project ID.");
-                return;
-            }
-
-            appEntered = true;
-            const config = { apiKey: apiKey, authDomain: projectId + ".firebaseapp.com", projectId: projectId };
-            isClientMode = clientCheck;
-            userRole = clientCheck ? 'cliente' : 'dev';
-
-            try {
-                localStorage.setItem('luppus_node_keys', JSON.stringify(config));
-                localStorage.setItem('luppus_client_mode', clientCheck ? 'true' : 'false');
-            } catch(e) {
-                console.warn("Storage bloqueado. Rodando em RAM.");
-                showToast("Sessão temporária iniciada.");
-            }
-
-            document.getElementById('login-error').style.display = 'none';
-            transitionToLoading(config);
-        }
-
-        function transitionToLoading(config) {
-            const btn = document.getElementById('btn-login-action');
-            const originalText = btn ? btn.textContent : '';
-            if(btn) {
-                btn.disabled = true;
-                btn.classList.add('btn-success');
-                btn.innerHTML = CHECK_SVG;
-            }
-
-            fadeLoginToLoading(() => {
-                if(btn) {
-                    btn.disabled = false;
-                    btn.classList.remove('btn-success');
-                    btn.textContent = originalText;
-                }
-                applyClientModeUI();
-                setTimeout(() => { initFirebase(config); }, 100);
-            });
-        }
-
         function startDemoWithAnimation() {
             const cta = document.querySelector('#login-overlay .demo-cta');
             let iconEl, textEl, originalIconHTML, originalTextHTML;
@@ -566,8 +510,112 @@
                     iconEl.innerHTML = originalIconHTML;
                     textEl.innerHTML = originalTextHTML;
                 }
-                hideLoadingOverlay(() => { startDemo(); });
+                hideLoadingOverlay(() => { startDemo(); startTour(); });
             });
+        }
+
+        // --- TOUR GUIADO (tutorial interativo da demonstração) ---
+        const TOUR_STEPS = [
+            { view: 'painel', selector: '.sidebar', title: 'Bem-vindo ao LUPPUS', text: 'Esse é o menu principal — daqui você navega entre painel, lançamentos, auditoria, planilhas, cofre digital e mais.' },
+            { view: 'painel', selector: '#view-painel .kpi-grid', title: 'Visão geral em números', text: 'Receita, custos, resultado líquido e a projeção de saldo para os próximos 30 dias, sempre atualizados.' },
+            { view: 'painel', selector: '#painel-alerts-grid', title: 'Avisos automáticos', text: 'O sistema avisa sozinho quando há lançamentos pendentes ou documentos vencendo em breve.' },
+            { view: 'painel', selector: '#quotes-panel-card', title: 'Cotações ao vivo', text: 'Câmbio em tempo real e índices de bolsa, direto no painel.' },
+            { view: 'lancamentos', selector: '#entry-submit-btn', title: 'Lance receitas e custos', text: 'Preencha os dados e anexe um comprovante — sem comprovante, o lançamento fica "pendente" até você regularizar.' },
+            { view: 'relatorios', selector: '#view-relatorios .smart-search-box', title: 'Busca inteligente', text: 'Digite em português o que procura, como "custos com infraestrutura", ou use os filtros rápidos ao lado.' },
+            { view: 'planilhas', selector: '#templates-panel-card', title: 'Planilhas com modelos prontos', text: 'Controle de estoque, cronogramas, contratos e mais — aplique um modelo pronto com um clique.' },
+            { view: 'cofre', selector: '#view-cofre .dashboard-lower-grid', title: 'Cofre digital', text: 'Guarde contratos e certidões com data de validade — o sistema avisa antes de vencer.' },
+            { view: 'config', selector: '.config-tabs', title: 'Configurações por perfil', text: 'Cada tipo de acesso (cliente, empresa ou dev) vê só as abas que faz sentido pra ele.' },
+            { view: 'suporte', selector: '.faq-tabs', title: 'Dúvidas? Estamos aqui', text: 'FAQ organizado por área, e um chat ao vivo pra falar com a gente na hora.' }
+        ];
+        let tourStepIndex = 0;
+        let tourRenderGen = 0;
+
+        function startTour() {
+            tourStepIndex = 0;
+            document.getElementById('tour-overlay').style.display = 'block';
+            renderTourStep();
+        }
+
+        function renderTourStep() {
+            const myGen = ++tourRenderGen;
+            const step = TOUR_STEPS[tourStepIndex];
+            switchView(step.view);
+            setTimeout(() => {
+                if(myGen !== tourRenderGen) return;
+                const target = document.querySelector(step.selector);
+                if(!target) { nextTourStep(); return; }
+                target.scrollIntoView({ block: 'center' });
+                setTimeout(() => {
+                    if(myGen !== tourRenderGen) return;
+                    const rect = target.getBoundingClientRect();
+                    positionTourMasks(rect);
+                    document.getElementById('tour-step-counter').textContent = (tourStepIndex + 1) + ' / ' + TOUR_STEPS.length;
+                    document.getElementById('tour-title').textContent = step.title;
+                    document.getElementById('tour-text').textContent = step.text;
+                    document.getElementById('tour-prev-btn').style.visibility = tourStepIndex === 0 ? 'hidden' : 'visible';
+                    document.getElementById('tour-next-btn').textContent = tourStepIndex === TOUR_STEPS.length - 1 ? 'concluir' : 'próximo';
+                    positionTourCard(rect);
+                }, 80);
+            }, 80);
+        }
+
+        function positionTourMasks(rect) {
+            const pad = 8;
+            const top = Math.max(0, rect.top - pad);
+            const left = Math.max(0, rect.left - pad);
+            const right = Math.min(window.innerWidth, rect.right + pad);
+            const bottom = Math.min(window.innerHeight, rect.bottom + pad);
+
+            document.getElementById('tour-mask-top').style.cssText = `top:0; left:0; width:100%; height:${top}px;`;
+            document.getElementById('tour-mask-bottom').style.cssText = `top:${bottom}px; left:0; width:100%; height:${Math.max(0, window.innerHeight - bottom)}px;`;
+            document.getElementById('tour-mask-left').style.cssText = `top:${top}px; left:0; width:${left}px; height:${bottom - top}px;`;
+            document.getElementById('tour-mask-right').style.cssText = `top:${top}px; left:${right}px; width:${Math.max(0, window.innerWidth - right)}px; height:${bottom - top}px;`;
+            document.getElementById('tour-highlight-box').style.cssText = `top:${top}px; left:${left}px; width:${right - left}px; height:${bottom - top}px;`;
+        }
+
+        function positionTourCard(rect) {
+            const card = document.getElementById('tour-card');
+            card.style.top = '-9999px';
+            card.style.left = '-9999px';
+            card.style.visibility = 'hidden';
+            requestAnimationFrame(() => {
+                const cardRect = card.getBoundingClientRect();
+                const margin = 20;
+                let top, left;
+
+                if(rect.bottom + margin + cardRect.height <= window.innerHeight - 10) {
+                    top = rect.bottom + margin; left = rect.left;
+                } else if(rect.top - margin - cardRect.height >= 10) {
+                    top = rect.top - margin - cardRect.height; left = rect.left;
+                } else if(rect.right + margin + cardRect.width <= window.innerWidth - 10) {
+                    top = rect.top; left = rect.right + margin;
+                } else if(rect.left - margin - cardRect.width >= 10) {
+                    top = rect.top; left = rect.left - margin - cardRect.width;
+                } else {
+                    top = window.innerHeight - cardRect.height - margin; left = window.innerWidth - cardRect.width - margin;
+                }
+
+                left = Math.max(10, Math.min(left, window.innerWidth - cardRect.width - 10));
+                top = Math.max(10, Math.min(top, window.innerHeight - cardRect.height - 10));
+                card.style.top = top + 'px';
+                card.style.left = left + 'px';
+                card.style.visibility = 'visible';
+            });
+        }
+
+        function nextTourStep() {
+            if(tourStepIndex >= TOUR_STEPS.length - 1) { endTour(); return; }
+            tourStepIndex++;
+            renderTourStep();
+        }
+        function prevTourStep() {
+            if(tourStepIndex === 0) return;
+            tourStepIndex--;
+            renderTourStep();
+        }
+        function skipTour() { endTour(); }
+        function endTour() {
+            document.getElementById('tour-overlay').style.display = 'none';
         }
 
         function doLogout() {

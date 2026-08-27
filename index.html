@@ -87,16 +87,13 @@
 
             <!-- ABA DESENVOLVEDOR -->
             <div id="login-panel-dev" class="login-tab-panel">
+                <input type="text" id="dev-email-input" placeholder="E-MAIL" onkeypress="if(event.key === 'Enter') doPasswordLogin('dev')">
                 <div class="password-field">
-                    <input type="password" id="api-key-input" placeholder="FIREBASE API KEY" onkeypress="if(event.key === 'Enter') doKeyLogin()">
-                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('api-key-input', this)" aria-label="mostrar api key"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+                    <input type="password" id="dev-password-input" placeholder="SENHA" onkeypress="if(event.key === 'Enter') doPasswordLogin('dev')">
+                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('dev-password-input', this)" aria-label="mostrar senha"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
                 </div>
-                <div class="password-field">
-                    <input type="password" id="project-id-input" placeholder="FIREBASE PROJECT ID" onkeypress="if(event.key === 'Enter') doKeyLogin()">
-                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('project-id-input', this)" aria-label="mostrar project id"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
-                </div>
-                <p class="support-note" style="margin-bottom: 18px;">Essas credenciais vêm do seu administrador de sistema.</p>
-                <button type="button" id="btn-login-action" onclick="doKeyLogin()">Acessar Ecossistema</button>
+                <p class="support-note" style="margin-bottom: 18px;">Acesso restrito à equipe de desenvolvimento do LUPPUS.</p>
+                <button type="button" id="btn-login-dev" onclick="doPasswordLogin('dev')">Acessar Ecossistema</button>
                 <label class="client-checkbox toggle-switch">
                     <input type="checkbox" id="client-mode-check">
                     <span class="toggle-slider"></span>
@@ -106,9 +103,9 @@
 
             <div id="login-error" class="error-msg"></div>
 
-            <button type="button" class="demo-cta" onclick="startDemoWithAnimation()">
-                <span class="demo-cta-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg></span>
-                <span class="demo-cta-text"><strong>ver demonstração</strong><span>explore o painel com dados de exemplo, sem precisar de conta</span></span>
+            <button type="button" class="demo-cta demo-cta-tour" onclick="startDemoWithAnimation()">
+                <span class="demo-cta-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg></span>
+                <span class="demo-cta-text"><strong>tour guiado</strong><span>veja como o LUPPUS funciona, passo a passo — sem precisar de conta</span></span>
             </button>
         </div>
     </div>
@@ -185,6 +182,27 @@
 
     <!-- CUSTOM TOAST ALERT -->
     <div id="toast-msg"></div>
+
+    <!-- TOUR GUIADO -->
+    <div id="tour-overlay" style="display: none;">
+        <div class="tour-mask" id="tour-mask-top"></div>
+        <div class="tour-mask" id="tour-mask-bottom"></div>
+        <div class="tour-mask" id="tour-mask-left"></div>
+        <div class="tour-mask" id="tour-mask-right"></div>
+        <div id="tour-highlight-box"></div>
+        <div id="tour-card">
+            <div id="tour-step-counter"></div>
+            <h3 id="tour-title"></h3>
+            <p id="tour-text"></p>
+            <div id="tour-card-actions">
+                <button type="button" class="text-link" onclick="skipTour()">pular tutorial</button>
+                <div id="tour-nav-buttons">
+                    <button type="button" class="outline-btn" id="tour-prev-btn" onclick="prevTourStep()">anterior</button>
+                    <button type="button" class="action-btn" id="tour-next-btn" onclick="nextTourStep()">próximo</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- MOBILE TOP BAR -->
     <div class="mobile-topbar hide-on-pdf">
@@ -275,7 +293,7 @@
                     <div class="kpi-card"><div class="kpi-title">saldo projetado (30d)</div><div class="kpi-value" id="painel-forecast-30">R$ 0,00</div></div>
                 </div>
                 <div class="painel-alerts-grid hide-on-pdf" id="painel-alerts-grid" style="margin-bottom: 20px;"></div>
-                <div class="panel-card" style="margin-bottom: 20px;">
+                <div class="panel-card" id="quotes-panel-card" style="margin-bottom: 20px;">
                     <div class="panel-title">cotações do dia</div>
                     <div class="quotes-grid">
                         <div class="quote-card">
@@ -458,7 +476,7 @@
             <div id="view-planilhas" class="view-section">
                 <div class="mobile-warning">O editor de planilhas é otimizado para uso em computadores e notebooks.</div>
 
-                <div class="panel-card hide-client">
+                <div class="panel-card hide-client" id="templates-panel-card">
                     <div class="panel-title">modelos prontos</div>
                     <div class="chip-list" style="margin-bottom: 0;">
                         <button class="outline-btn" style="padding: 6px 12px;" onclick="applySheetTemplate('estoque')">controle de estoque</button>
@@ -1182,7 +1200,7 @@
                         <div class="faq-list">
                             <details class="faq-item">
                                 <summary>Qual aba eu uso para entrar — empresa, cliente ou desenvolvedor?</summary>
-                                <p><strong>Empresa</strong> e <strong>cliente</strong> são login por e-mail e senha, já conectado a contas reais. <strong>Desenvolvedor</strong> é para quem tem as credenciais do Firebase do projeto — uso administrativo, para conectar diretamente a um banco de dados específico.</p>
+                                <p><strong>Empresa</strong> e <strong>cliente</strong> são login por e-mail e senha, já conectado a contas reais. <strong>Desenvolvedor</strong> também é e-mail e senha, mas restrito só à equipe técnica do LUPPUS — dá acesso administrativo ao sistema.</p>
                             </details>
                             <details class="faq-item">
                                 <summary>Esqueci minha senha, como recupero?</summary>
@@ -1194,7 +1212,7 @@
                             </details>
                             <details class="faq-item">
                                 <summary>Posso dar acesso a um cliente sem que ele veja tudo?</summary>
-                                <p>Sim. Quem entra pela aba "cliente" (ou, na aba "desenvolvedor", com "testar como modo cliente" ativado) só vê a própria aba de Configurações — as abas "empresa" e "dev" ficam ocultas — e não vê botões de excluir nem a opção de adicionar novas empresas. Quem entra como "empresa" vê as abas cliente e empresa; a aba "dev" fica reservada só para quem acessa com credenciais do Firebase.</p>
+                                <p>Sim. Quem entra pela aba "cliente" (ou, na aba "desenvolvedor", com "testar como modo cliente" ativado) só vê a própria aba de Configurações — as abas "empresa" e "dev" ficam ocultas — e não vê botões de excluir nem a opção de adicionar novas empresas. Quem entra como "empresa" vê as abas cliente e empresa; a aba "dev" fica reservada só para os e-mails autorizados da equipe técnica.</p>
                             </details>
                             <details class="faq-item">
                                 <summary>Não vejo alguns botões que outras pessoas da equipe veem.</summary>
