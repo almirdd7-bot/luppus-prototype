@@ -353,13 +353,6 @@
                         <div class="form-group"><label>categoria</label>
                             <select id="entry-category">
                                 <option value="">sem categoria</option>
-                                <option>Marketing</option>
-                                <option>Folha de Pagamento</option>
-                                <option>Impostos</option>
-                                <option>Infraestrutura</option>
-                                <option>Consultoria</option>
-                                <option>Vendas</option>
-                                <option>Outro</option>
                             </select>
                         </div>
                         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
@@ -702,18 +695,12 @@
 
                         <div class="panel-card">
                             <div class="panel-title">categorias de lançamento</div>
-                            <div class="chip-list">
-                                <span class="chip">Marketing</span>
-                                <span class="chip">Folha de Pagamento</span>
-                                <span class="chip">Impostos</span>
-                                <span class="chip">Infraestrutura</span>
-                                <span class="chip">Consultoria</span>
-                            </div>
+                            <div class="chip-list" id="category-chip-list"></div>
                             <div class="form-row">
-                                <input type="text" placeholder="Nova categoria" disabled>
-                                <button class="outline-btn" disabled>adicionar</button>
+                                <input type="text" id="new-category-input" placeholder="Nova categoria" onkeypress="if(event.key === 'Enter') addCategory()">
+                                <button class="outline-btn" onclick="addCategory()">adicionar</button>
                             </div>
-                            <p class="support-note">Personalize as categorias usadas nos lançamentos — em breve.</p>
+                            <p class="support-note">As categorias padrão não podem ser removidas; as que você adicionar aqui aparecem também na tela de lançamentos.</p>
                         </div>
 
                         <div class="panel-card">

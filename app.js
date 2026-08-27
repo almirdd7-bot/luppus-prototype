@@ -486,6 +486,7 @@
             if(entryDateEl) entryDateEl.value = getTodayDate();
 
             renderCompanyDropdown();
+            renderCategoryUI();
             applySmartSearch();
             renderVault();
         }
@@ -681,12 +682,14 @@
                             if(!appDB.vault) appDB.vault = {};
 
                             renderCompanyDropdown();
+                            renderCategoryUI();
                             applySmartSearch();
                             renderVault();
                             if(!isClientMode && document.getElementById('view-planilhas').classList.contains('active')) initSpreadsheet();
                         } else {
                             saveToCloud();
                             renderCompanyDropdown();
+                            renderCategoryUI();
                             applySmartSearch();
                         }
                     });
@@ -778,6 +781,7 @@
             appDB.currentCompanyId = companyId;
             saveToCloud();
             renderCompanyDropdown();
+            renderCategoryUI();
             applySmartSearch();
             renderVault();
             pendingOFX = [];
@@ -886,6 +890,53 @@
         let auditSortDir = 'desc';
         let auditNoAttachmentOnly = false;
         let lastAuditFilteredData = [];
+
+        const DEFAULT_CATEGORIES = ['Marketing', 'Folha de Pagamento', 'Impostos', 'Infraestrutura', 'Consultoria', 'Vendas', 'Outro'];
+
+        function getCategories() {
+            if(!appDB.customCategories) appDB.customCategories = {};
+            const custom = appDB.customCategories[appDB.currentCompanyId] || [];
+            return DEFAULT_CATEGORIES.concat(custom);
+        }
+
+        function renderCategoryUI() {
+            const chipContainer = document.getElementById('category-chip-list');
+            if(chipContainer) {
+                const custom = (appDB.customCategories && appDB.customCategories[appDB.currentCompanyId]) || [];
+                const baseHtml = DEFAULT_CATEGORIES.map(c => `<span class="chip">${c}</span>`).join('');
+                const customHtml = custom.map((c, i) => `<span class="chip">${c}<button type="button" class="chip-remove" onclick="removeCategory(${i})" aria-label="remover categoria ${c}">×</button></span>`).join('');
+                chipContainer.innerHTML = baseHtml + customHtml;
+            }
+
+            const select = document.getElementById('entry-category');
+            if(select) {
+                const currentValue = select.value;
+                const options = getCategories().map(c => `<option${c === currentValue ? ' selected' : ''}>${c}</option>`).join('');
+                select.innerHTML = '<option value="">sem categoria</option>' + options;
+            }
+        }
+
+        function addCategory() {
+            const input = document.getElementById('new-category-input');
+            const name = input.value.trim();
+            if(!name) { showToast('Digite o nome da categoria.'); return; }
+            if(getCategories().some(c => c.toLowerCase() === name.toLowerCase())) { showToast('Essa categoria já existe.'); return; }
+            if(!appDB.customCategories) appDB.customCategories = {};
+            if(!appDB.customCategories[appDB.currentCompanyId]) appDB.customCategories[appDB.currentCompanyId] = [];
+            appDB.customCategories[appDB.currentCompanyId].push(name);
+            saveToCloud();
+            input.value = '';
+            renderCategoryUI();
+            showToast('Categoria adicionada.');
+        }
+
+        function removeCategory(index) {
+            const custom = appDB.customCategories[appDB.currentCompanyId] || [];
+            custom.splice(index, 1);
+            saveToCloud();
+            renderCategoryUI();
+            showToast('Categoria removida.');
+        }
 
         function applySmartSearch() {
             clearTimeout(filterTimeout);
