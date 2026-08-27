@@ -1919,16 +1919,37 @@
 
         function exportSpreadsheet() { if(mySpreadsheet) mySpreadsheet.download(); }
         
+        // Faz split respeitando campos entre aspas (que podem conter o próprio separador,
+        // ex: "Fornecedor, Ltda") — um split ingênuo quebraria essas colunas.
+        function parseCsvLine(line, sep) {
+            const cols = []; let cur = ''; let inQuotes = false;
+            for(let i = 0; i < line.length; i++) {
+                const ch = line[i];
+                if(inQuotes) {
+                    if(ch === '"') {
+                        if(line[i+1] === '"') { cur += '"'; i++; }
+                        else inQuotes = false;
+                    } else cur += ch;
+                } else {
+                    if(ch === '"') inQuotes = true;
+                    else if(ch === sep) { cols.push(cur.trim()); cur = ''; }
+                    else cur += ch;
+                }
+            }
+            cols.push(cur.trim());
+            return cols;
+        }
+
         function handleCSVUpload() {
             const file = document.getElementById('bi-csv').files[0]; if(!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
                 const lines = e.target.result.split(/\r?\n/).filter(l => l.trim() !== '');
                 if(lines.length < 2) return;
-                const sep = lines[0].includes(';') ? ';' : ','; biHeaders = lines[0].split(sep).map(h => h.trim());
+                const sep = lines[0].includes(';') ? ';' : ','; biHeaders = parseCsvLine(lines[0], sep);
                 biData = [];
                 for(let i=1; i<lines.length; i++){
-                    const cols = lines[i].split(sep).map(c => c.trim()); let rowObj = {};
+                    const cols = parseCsvLine(lines[i], sep); let rowObj = {};
                     biHeaders.forEach((h, idx) => { rowObj[h] = cols[idx]; }); biData.push(rowObj);
                 }
                 finalizeBIData();
