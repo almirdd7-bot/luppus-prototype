@@ -1,5 +1,17 @@
         const WIPE_PIN = "outdd102030";
 
+        // Escapa texto digitado pelo usuário (descrição, categoria, nome de documento)
+        // antes de injetar via innerHTML, prevenindo XSS armazenado.
+        function escapeHtml(str) {
+            if(str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         // Projeto oficial do LUPPUS (login real de empresa/cliente) — a apiKey do Firebase
         // é feita para ficar pública no front-end; a segurança de verdade vem das regras do Firestore.
         const PROD_FIREBASE_CONFIG = {
@@ -918,14 +930,14 @@
             if(chipContainer) {
                 const custom = (appDB.customCategories && appDB.customCategories[appDB.currentCompanyId]) || [];
                 const baseHtml = DEFAULT_CATEGORIES.map(c => `<span class="chip">${c}</span>`).join('');
-                const customHtml = custom.map((c, i) => `<span class="chip">${c}<button type="button" class="chip-remove" onclick="removeCategory(${i})" aria-label="remover categoria ${c}">×</button></span>`).join('');
+                const customHtml = custom.map((c, i) => `<span class="chip">${escapeHtml(c)}<button type="button" class="chip-remove" onclick="removeCategory(${i})" aria-label="remover categoria ${escapeHtml(c)}">×</button></span>`).join('');
                 chipContainer.innerHTML = baseHtml + customHtml;
             }
 
             const select = document.getElementById('entry-category');
             if(select) {
                 const currentValue = select.value;
-                const options = getCategories().map(c => `<option${c === currentValue ? ' selected' : ''}>${c}</option>`).join('');
+                const options = getCategories().map(c => `<option${c === currentValue ? ' selected' : ''}>${escapeHtml(c)}</option>`).join('');
                 select.innerHTML = '<option value="">sem categoria</option>' + options;
             }
         }
@@ -1102,7 +1114,7 @@
                 let attachmentHtml = '<span style="color: var(--text-muted);">-</span>';
                 if (t.receipt) { attachmentHtml = `<a href="${t.receipt.data}" download="${t.receipt.name}" class="attachment-link">doc</a>`; }
 
-                const categoryChip = t.category ? ` <span class="chip" style="padding: 2px 8px; font-size: 9px; vertical-align: middle;">${t.category}</span>` : '';
+                const categoryChip = t.category ? ` <span class="chip" style="padding: 2px 8px; font-size: 9px; vertical-align: middle;">${escapeHtml(t.category)}</span>` : '';
                 const pendingChip = isPending ? ` <span class="chip chip-danger" style="padding: 2px 8px; font-size: 9px; vertical-align: middle;">pendente</span>` : '';
 
                 if(tbody) {
@@ -1116,7 +1128,7 @@
                     }
                     tr.innerHTML = `
                         <td style="color: var(--text-muted);">${t.date}</td>
-                        <td>${t.desc}${categoryChip}${pendingChip}</td>
+                        <td>${escapeHtml(t.desc)}${categoryChip}${pendingChip}</td>
                         <td style="color: ${t.type === 'in' ? 'var(--success)' : 'var(--danger)'};">${t.type === 'in' ? 'receita' : 'custo'}</td>
                         <td>R$ ${t.amount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                         <td class="hide-on-pdf">${attachmentHtml}</td>
@@ -1128,7 +1140,7 @@
                 if(recentList && index < 5) {
                     const li = document.createElement('li');
                     li.className = 'recent-item';
-                    li.innerHTML = `<span class="recent-desc">${t.desc.substring(0,25)}${pendingChip}</span><span class="recent-val ${t.type}">${t.type === 'in' ? '+' : '-'}R$ ${t.amount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>`;
+                    li.innerHTML = `<span class="recent-desc">${escapeHtml(t.desc.substring(0,25))}${pendingChip}</span><span class="recent-val ${t.type}">${t.type === 'in' ? '+' : '-'}R$ ${t.amount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>`;
                     recentList.appendChild(li);
                 }
             });
@@ -1252,7 +1264,7 @@
                     return `
                         <li class="category-breakdown-item">
                             <span class="category-breakdown-dot" style="background: ${colors[i]};"></span>
-                            <span class="category-breakdown-info"><strong>${cat}</strong><span>${data.count} lançamento${data.count === 1 ? '' : 's'}</span></span>
+                            <span class="category-breakdown-info"><strong>${escapeHtml(cat)}</strong><span>${data.count} lançamento${data.count === 1 ? '' : 's'}</span></span>
                             <span class="category-breakdown-value"><strong>R$ ${data.total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong><span>${pct.toFixed(1)}% do total</span></span>
                         </li>
                     `;
@@ -1497,11 +1509,11 @@
                 const li = document.createElement('li');
                 li.className = 'recent-item';
                 let deleteBtnHtml = isClientMode ? '' : `<button class="icon-btn" onclick="deleteVault(${i})" aria-label="excluir documento"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>`;
-                const categoryChip = d.category ? `<span class="chip">${d.category}</span>` : '';
+                const categoryChip = d.category ? `<span class="chip">${escapeHtml(d.category)}</span>` : '';
                 const expiryChip = vaultExpiryBadge(d.expiry);
                 li.innerHTML = `
                     <div>
-                        <strong style="color: var(--text-main);">${d.name}</strong> <span style="color:var(--text-muted); font-size:10px;">(${d.date})</span>
+                        <strong style="color: var(--text-main);">${escapeHtml(d.name)}</strong> <span style="color:var(--text-muted); font-size:10px;">(${d.date})</span>
                         ${(categoryChip || expiryChip) ? `<div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">${categoryChip}${expiryChip}</div>` : ''}
                     </div>
                     <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
@@ -1525,9 +1537,9 @@
             const isImage = mime.startsWith('image/') || /\.(png|jpe?g|gif|webp)$/.test(fname);
             const isPdf = mime === 'application/pdf' || fname.endsWith('.pdf');
             if(isImage) {
-                body.innerHTML = `<img src="${fileObj.data}" alt="${title}">`;
+                body.innerHTML = `<img src="${fileObj.data}" alt="${escapeHtml(title)}">`;
             } else if(isPdf) {
-                body.innerHTML = `<iframe src="${fileObj.data}" title="${title}"></iframe>`;
+                body.innerHTML = `<iframe src="${fileObj.data}" title="${escapeHtml(title)}"></iframe>`;
             } else {
                 body.innerHTML = `<p class="empty-state">Pré-visualização não disponível para este tipo de arquivo. Use o download.</p>`;
             }
@@ -1702,7 +1714,7 @@
                     document.getElementById('ofx-queue-container').style.display = 'block';
                     pendingOFX.forEach((t, i) => {
                         const li = document.createElement('li'); li.className = 'ofx-item ' + (t.type==='in'?'ofx-item-in':'ofx-item-out');
-                        li.innerHTML = `<div><strong style="color:var(--text-main);">${t.date}</strong> | <span style="color:var(--text-muted);">${t.desc.substring(0,25)}</span><br><span style="color:${t.type==='in'?'var(--success)':'var(--danger)'};">R$ ${t.amount.toFixed(2)}</span></div><button class="outline-btn" style="padding:6px;" onclick="loadOFX(${i})">Validar</button>`;
+                        li.innerHTML = `<div><strong style="color:var(--text-main);">${t.date}</strong> | <span style="color:var(--text-muted);">${escapeHtml(t.desc.substring(0,25))}</span><br><span style="color:${t.type==='in'?'var(--success)':'var(--danger)'};">R$ ${t.amount.toFixed(2)}</span></div><button class="outline-btn" style="padding:6px;" onclick="loadOFX(${i})">Validar</button>`;
                         ul.appendChild(li);
                     });
                 } else { showToast("Sem lançamentos no OFX."); }
@@ -1779,7 +1791,7 @@
             const activeId = getActiveSheetId();
             const container = document.getElementById('sheet-tabs');
             if(!container) return;
-            const tabsHtml = sheets.map(s => `<button type="button" class="sheet-tab ${s.id === activeId ? 'active' : ''}" onclick="switchSheet('${s.id}')">${s.name}</button>`).join('');
+            const tabsHtml = sheets.map(s => `<button type="button" class="sheet-tab ${s.id === activeId ? 'active' : ''}" onclick="switchSheet('${s.id}')">${escapeHtml(s.name)}</button>`).join('');
             const addHtml = isClientMode ? '' : `<button type="button" class="sheet-tab-add" onclick="addSheet()" aria-label="nova planilha">+</button>`;
             container.innerHTML = tabsHtml + addHtml;
         }
@@ -1921,7 +1933,7 @@
         function finalizeBIData() {
             const sX = document.getElementById('bi-x'); const sY = document.getElementById('bi-y'); const sFilterCol = document.getElementById('bi-filter-col');
             sX.innerHTML = ''; sY.innerHTML = ''; sFilterCol.innerHTML = '<option value="">nenhum</option>';
-            biHeaders.forEach(h => { sX.innerHTML += `<option>${h}</option>`; sY.innerHTML += `<option>${h}</option>`; sFilterCol.innerHTML += `<option>${h}</option>`; });
+            biHeaders.forEach(h => { sX.innerHTML += `<option>${escapeHtml(h)}</option>`; sY.innerHTML += `<option>${escapeHtml(h)}</option>`; sFilterCol.innerHTML += `<option>${escapeHtml(h)}</option>`; });
             if(biHeaders.length > 1) sY.selectedIndex = 1;
             document.getElementById('bi-controls').style.display = 'block';
             const biEmpty = document.getElementById('bi-empty-state'); if(biEmpty) biEmpty.style.display = 'none';
@@ -1936,7 +1948,7 @@
             if(!col) { sVal.innerHTML = '<option value="">todos</option>'; sVal.disabled = true; updateBIChart(); return; }
             sVal.disabled = false;
             const uniqueVals = [...new Set(biData.map(r => r[col]))].sort();
-            sVal.innerHTML = '<option value="">todos</option>' + uniqueVals.map(v => `<option>${v}</option>`).join('');
+            sVal.innerHTML = '<option value="">todos</option>' + uniqueVals.map(v => `<option>${escapeHtml(v)}</option>`).join('');
             updateBIChart();
         }
 
@@ -1947,8 +1959,8 @@
             if(biData.length === 0) { card.style.display = 'none'; container.innerHTML = ''; return; }
             card.style.display = 'block';
             const rows = biData.slice(0, 50);
-            let html = '<div class="table-container"><table><thead><tr>' + biHeaders.map(h => `<th>${h}</th>`).join('') + '</tr></thead><tbody>';
-            rows.forEach(r => { html += '<tr>' + biHeaders.map(h => `<td>${r[h] !== undefined && r[h] !== null ? r[h] : '-'}</td>`).join('') + '</tr>'; });
+            let html = '<div class="table-container"><table><thead><tr>' + biHeaders.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead><tbody>';
+            rows.forEach(r => { html += '<tr>' + biHeaders.map(h => `<td>${r[h] !== undefined && r[h] !== null ? escapeHtml(r[h]) : '-'}</td>`).join('') + '</tr>'; });
             html += '</tbody></table></div>';
             if(biData.length > 50) html += `<p class="support-note" style="margin-top:10px;">mostrando as primeiras 50 de ${biData.length} linhas.</p>`;
             container.innerHTML = html;
