@@ -744,6 +744,17 @@
             if(pendingSaves > 0) { e.preventDefault(); e.returnValue = ''; }
         });
 
+        // Fecha o modal aberto no topo com a tecla Esc (login/loading não entram — não são dispensáveis).
+        window.addEventListener('keydown', (e) => {
+            if(e.key !== 'Escape') return;
+            const isOpen = (id) => { const el = document.getElementById(id); return el && el.style.display !== 'none' && el.style.display !== ''; };
+            if(isOpen('vault-preview-overlay')) closeVaultPreview();
+            else if(isOpen('wipe-overlay')) closeWipeModal();
+            else if(isOpen('new-company-overlay')) closeNewCompanyModal();
+            else if(isOpen('signup-overlay')) closeSignup();
+            else if(isOpen('forgot-password-overlay')) closeForgotPassword();
+        });
+
         // O Firestore não aceita listas dentro de listas — e é assim que a planilha guarda
         // os dados (lista de linhas, cada linha uma lista de células). Por isso, ao salvar,
         // cada planilha vira um texto (JSON) só nesse momento; ao carregar, volta ao normal.
