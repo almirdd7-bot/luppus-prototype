@@ -89,6 +89,7 @@
         }
         
         let isClientMode = false;
+        let userRole = 'empresa'; // 'cliente' | 'empresa' | 'dev' — controla quais abas de Configurações aparecem
         let appEntered = false;
 
         function showToast(msg) {
@@ -158,7 +159,7 @@
             try {
                 const savedKeys = localStorage.getItem('luppus_node_keys');
                 const savedMode = localStorage.getItem('luppus_client_mode');
-                if(savedMode === 'true') isClientMode = true;
+                if(savedMode === 'true') { isClientMode = true; userRole = 'cliente'; } else { userRole = 'dev'; }
 
                 if(savedKeys) {
                     appEntered = true;
@@ -176,6 +177,7 @@
                             appEntered = true;
                             const savedRole = localStorage.getItem('luppus_auth_role') || 'empresa';
                             isClientMode = (savedRole === 'cliente');
+                            userRole = savedRole;
                             applyClientModeUI();
                             initFirebase(PROD_FIREBASE_CONFIG, AUTH_APP_NAME);
                             fetchMarketIndices();
@@ -323,6 +325,7 @@
                 .then(() => {
                     appEntered = true;
                     isClientMode = (role === 'cliente');
+                    userRole = role;
                     try { localStorage.setItem('luppus_auth_role', role); } catch(e) {}
                     if(btn) {
                         btn.classList.add('btn-success');
@@ -413,6 +416,7 @@
                     appEntered = true;
                     try { localStorage.setItem('luppus_auth_role', 'empresa'); } catch(e) {}
                     isClientMode = false;
+                    userRole = 'empresa';
                     document.getElementById('signup-overlay').style.display = 'none';
                     showToast('Conta criada com sucesso!');
                     markLoadingShown();
@@ -472,6 +476,8 @@
                 ] }
             };
             isClientMode = false;
+            userRole = 'empresa';
+            applyClientModeUI();
 
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('loading-overlay').style.display = 'none';
@@ -505,6 +511,7 @@
             appEntered = true;
             const config = { apiKey: apiKey, authDomain: projectId + ".firebaseapp.com", projectId: projectId };
             isClientMode = clientCheck;
+            userRole = clientCheck ? 'cliente' : 'dev';
 
             try {
                 localStorage.setItem('luppus_node_keys', JSON.stringify(config));
@@ -578,9 +585,20 @@
         }
         
         function applyClientModeUI() {
-            if(isClientMode) {
-                document.body.classList.add('client-mode');
-            }
+            document.body.classList.toggle('client-mode', isClientMode);
+            applyConfigTabVisibility();
+        }
+
+        function applyConfigTabVisibility() {
+            const empresaTabBtn = document.querySelector('.config-tab[data-tab="empresa"]');
+            const devTabBtn = document.querySelector('.config-tab[data-tab="dev"]');
+            if(empresaTabBtn) empresaTabBtn.style.display = (userRole === 'cliente') ? 'none' : '';
+            if(devTabBtn) devTabBtn.style.display = (userRole === 'dev') ? '' : 'none';
+
+            const activeTab = document.querySelector('.config-tab.active');
+            const activeTabName = activeTab ? activeTab.getAttribute('data-tab') : 'cliente';
+            const allowed = userRole === 'dev' || (userRole === 'empresa' && activeTabName !== 'dev') || (userRole === 'cliente' && activeTabName === 'cliente');
+            if(!allowed) switchConfigTab('cliente');
         }
 
         function initFirebase(config, appName) {

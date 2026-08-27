@@ -228,8 +228,8 @@
                 <svg class="menu-icon" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                 cofre digital
             </button></li>
-            <hr class="menu-divider hide-client">
-            <li class="hide-client"><button type="button" class="menu-item" id="menu-config" onclick="switchView('config')">
+            <hr class="menu-divider">
+            <li><button type="button" class="menu-item" id="menu-config" onclick="switchView('config')">
                 <svg class="menu-icon" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 configurações
             </button></li>
@@ -566,7 +566,7 @@
             </div>
 
             <!-- VIEW 8: CONFIGURAÇÕES -->
-            <div id="view-config" class="view-section hide-on-pdf hide-client">
+            <div id="view-config" class="view-section hide-on-pdf">
                 <div class="config-tabs">
                     <button type="button" class="config-tab active" data-tab="cliente" onclick="switchConfigTab('cliente')">cliente</button>
                     <button type="button" class="config-tab" data-tab="empresa" onclick="switchConfigTab('empresa')">empresa</button>
@@ -679,7 +679,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <p class="support-note">Depende da API de cotações no back-end — ainda não existe.</p>
+                            <p class="support-note">Os dados do painel já são reais (câmbio ao vivo, índices 2x ao dia) — a possibilidade de escolher quais moedas e bolsas aparecem ainda não existe.</p>
                         </div>
 
                         <div class="panel-card">
@@ -1165,7 +1165,7 @@
                             </details>
                             <details class="faq-item">
                                 <summary>As cotações de moeda são em tempo real?</summary>
-                                <p>Ainda não — hoje são dados de exemplo. As moedas e bolsas exibidas são configuráveis em Configurações › cliente, e a conexão com uma API de cotações real está prevista para quando o back-end estiver pronto.</p>
+                                <p>O câmbio (dólar, euro, libra) sim, é ao vivo. Os índices de bolsa (NASDAQ, DAX, FTSE) são atualizados no máximo duas vezes ao dia, e só aparecem pra quem está com uma conta conectada de verdade (no modo demonstração ficam como "--").</p>
                             </details>
                             <details class="faq-item">
                                 <summary>Como funciona o gráfico de gastos por categoria?</summary>
@@ -1190,11 +1190,11 @@
                             </details>
                             <details class="faq-item">
                                 <summary>Como crio uma conta nova?</summary>
-                                <p>Clique em "criar conta" na tela de login e preencha nome, empresa/CNPJ, e-mail e senha. Assim como a recuperação de senha, o cadastro ainda não está conectado a um back-end real.</p>
+                                <p>Clique em "criar conta" na tela de login e preencha nome, empresa/CNPJ (preenchido automaticamente ao digitar um CNPJ válido), e-mail e senha. A conta é criada de verdade e já pode ser usada para entrar.</p>
                             </details>
                             <details class="faq-item">
                                 <summary>Posso dar acesso a um cliente sem que ele veja tudo?</summary>
-                                <p>Sim. Na aba "desenvolvedor" da tela de login, ative "testar como modo cliente" antes de acessar. Isso esconde automaticamente configurações, botões de excluir e a opção de adicionar novas empresas — a pessoa continua vendo os dados financeiros, só não altera a estrutura do sistema.</p>
+                                <p>Sim. Quem entra pela aba "cliente" (ou, na aba "desenvolvedor", com "testar como modo cliente" ativado) só vê a própria aba de Configurações — as abas "empresa" e "dev" ficam ocultas — e não vê botões de excluir nem a opção de adicionar novas empresas. Quem entra como "empresa" vê as abas cliente e empresa; a aba "dev" fica reservada só para quem acessa com credenciais do Firebase.</p>
                             </details>
                             <details class="faq-item">
                                 <summary>Não vejo alguns botões que outras pessoas da equipe veem.</summary>
