@@ -1873,7 +1873,8 @@
         }
         async function generatePDF() {
             document.getElementById('loading-text').innerText = "Gerando PDF..."; document.getElementById('loading-overlay').style.display = 'flex';
-            document.getElementById('view-painel').style.display = 'block';
+            const currentViewEl = document.querySelector('.view-section.active');
+            const currentViewId = currentViewEl ? currentViewEl.id.replace('view-', '') : 'painel';
             const exportArea = document.getElementById('pdf-export-area'); exportArea.classList.add('pdf-mode');
             try {
                 const { jsPDF } = window.jspdf; const pdf = new jsPDF('p', 'mm', 'a4'); window.scrollTo(0,0);
@@ -1881,6 +1882,6 @@
                 const canvas = await html2canvas(exportArea, { backgroundColor: '#121516', scale: 2 });
                 pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), (canvas.height * pdf.internal.pageSize.getWidth()) / canvas.width);
                 pdf.save(`LUPPUS_${Date.now()}.pdf`);
-            } catch (error) { showToast("Erro PDF."); } 
-            finally { exportArea.classList.remove('pdf-mode'); document.getElementById('loading-overlay').style.display = 'none'; switchView('relatorios'); }
+            } catch (error) { showToast("Erro PDF."); }
+            finally { exportArea.classList.remove('pdf-mode'); document.getElementById('loading-overlay').style.display = 'none'; switchView(currentViewId); }
         }
