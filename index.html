@@ -117,23 +117,11 @@
         <div class="login-box login-box--wide">
             <img class="login-logo login-logo--sm" src="assets/logo-vertical.png" alt="LUPPUS — find the signal">
             <h1 style="font-size: 20px;">recuperar senha</h1>
-            <p>Escolha como quer receber o código</p>
+            <p>Enviaremos um link de redefinição para o seu e-mail</p>
 
-            <div class="chip-list" style="justify-content: center; margin-bottom: 24px;">
-                <button type="button" class="chip active" id="recovery-tab-email" onclick="switchRecoveryChannel('email')">e-mail</button>
-                <button type="button" class="chip" id="recovery-tab-whatsapp" onclick="switchRecoveryChannel('whatsapp')">WhatsApp</button>
-            </div>
-
-            <div id="recovery-step-request">
+            <div id="recovery-step-request" style="margin-top: 24px;">
                 <input type="text" id="recovery-contact-input" placeholder="seu e-mail cadastrado">
-                <button type="button" onclick="sendRecoveryCode()">Enviar código</button>
-            </div>
-
-            <div id="recovery-step-verify" style="display: none;">
-                <p class="support-note" id="recovery-sent-note" style="margin-bottom: 18px;"></p>
-                <input type="text" id="recovery-code-input" placeholder="CÓDIGO DE 6 DÍGITOS" maxlength="6">
-                <button type="button" onclick="verifyRecoveryCode()">Verificar código</button>
-                <button type="button" class="text-link" onclick="sendRecoveryCode()">reenviar código</button>
+                <button type="button" onclick="sendRecoveryCode()">Enviar link</button>
             </div>
 
             <button type="button" class="outline-btn" style="width: 100%; margin-top: 15px;" onclick="closeForgotPassword()">Cancelar</button>
@@ -1022,14 +1010,14 @@
                         <div class="flow-arrow" aria-hidden="true">→</div>
                         <div class="flow-step">
                             <div class="flow-step-num">2</div>
-                            <div class="flow-step-title">escolha o canal</div>
-                            <p>E-mail ou WhatsApp cadastrado na conta.</p>
+                            <div class="flow-step-title">digite seu e-mail</div>
+                            <p>O mesmo cadastrado na conta.</p>
                         </div>
                         <div class="flow-arrow" aria-hidden="true">→</div>
                         <div class="flow-step">
                             <div class="flow-step-num">3</div>
-                            <div class="flow-step-title">digite o código</div>
-                            <p>Recebido no canal escolhido, e confirme.</p>
+                            <div class="flow-step-title">abra o link recebido</div>
+                            <p>Chega por e-mail e leva direto para criar a nova senha.</p>
                         </div>
                     </div>
                 </div>
@@ -1198,11 +1186,11 @@
                         <div class="faq-list">
                             <details class="faq-item">
                                 <summary>Qual aba eu uso para entrar — empresa, cliente ou desenvolvedor?</summary>
-                                <p><strong>Empresa</strong> e <strong>cliente</strong> são login por e-mail e senha (ainda não conectado a um sistema real de contas). <strong>Desenvolvedor</strong> é para quem tem as credenciais do Firebase do projeto — é essa aba que realmente acessa o sistema hoje, enquanto o login por senha não está pronto.</p>
+                                <p><strong>Empresa</strong> e <strong>cliente</strong> são login por e-mail e senha, já conectado a contas reais. <strong>Desenvolvedor</strong> é para quem tem as credenciais do Firebase do projeto — uso administrativo, para conectar diretamente a um banco de dados específico.</p>
                             </details>
                             <details class="faq-item">
                                 <summary>Esqueci minha senha, como recupero?</summary>
-                                <p>Clique em "esqueceu a senha?" na tela de login, escolha receber o código por e-mail ou WhatsApp (veja o fluxograma acima). Esse fluxo ainda não está conectado a um serviço real de envio — a tela já está pronta para quando estiver.</p>
+                                <p>Clique em "esqueceu a senha?" na tela de login e digite seu e-mail cadastrado (veja o fluxograma acima). Você recebe um link por e-mail que leva direto para criar uma nova senha.</p>
                             </details>
                             <details class="faq-item">
                                 <summary>Como crio uma conta nova?</summary>

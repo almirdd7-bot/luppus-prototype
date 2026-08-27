@@ -345,7 +345,6 @@
                 });
         }
 
-        let recoveryChannel = 'email';
         function openForgotPassword() {
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('forgot-password-overlay').style.display = 'flex';
@@ -357,40 +356,20 @@
             resetRecoveryFlow();
         }
         function resetRecoveryFlow() {
-            document.getElementById('recovery-step-request').style.display = 'block';
-            document.getElementById('recovery-step-verify').style.display = 'none';
             document.getElementById('recovery-contact-input').value = '';
-            document.getElementById('recovery-code-input').value = '';
-            switchRecoveryChannel('email');
-        }
-        function switchRecoveryChannel(channel) {
-            recoveryChannel = channel;
-            document.getElementById('recovery-tab-email').classList.toggle('active', channel === 'email');
-            document.getElementById('recovery-tab-whatsapp').classList.toggle('active', channel === 'whatsapp');
-            document.getElementById('recovery-contact-input').placeholder = channel === 'email' ? 'Seu e-mail cadastrado' : 'Seu WhatsApp cadastrado';
         }
         function sendRecoveryCode() {
             const contact = document.getElementById('recovery-contact-input').value.trim();
-            if(!contact) { showToast('Preencha o campo de contato.'); return; }
+            if(!contact) { showToast('Preencha o campo de e-mail.'); return; }
 
-            if(recoveryChannel === 'email') {
-                getAuthApp().auth().sendPasswordResetEmail(contact)
-                    .then(() => {
-                        showToast('Enviamos um link de redefinição de senha para o seu e-mail.');
-                        closeForgotPassword();
-                    })
-                    .catch((error) => {
-                        showToast(translateAuthError(error.code));
-                    });
-                return;
-            }
-
-            document.getElementById('recovery-step-request').style.display = 'none';
-            document.getElementById('recovery-step-verify').style.display = 'block';
-            document.getElementById('recovery-sent-note').textContent = 'Envio de código por WhatsApp ainda não está conectado a um serviço real — essa tela já fica pronta para quando o back-end existir.';
-        }
-        function verifyRecoveryCode() {
-            showToast('Verificação de código ainda não está conectada ao back-end.');
+            getAuthApp().auth().sendPasswordResetEmail(contact)
+                .then(() => {
+                    showToast('Enviamos um link de redefinição de senha para o seu e-mail.');
+                    closeForgotPassword();
+                })
+                .catch((error) => {
+                    showToast(translateAuthError(error.code));
+                });
         }
 
         (function setupCnpjAutocomplete() {
