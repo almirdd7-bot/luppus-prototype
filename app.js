@@ -667,7 +667,7 @@
                         if(entryDateEl) entryDateEl.value = getTodayDate();
 
                         if (doc.exists) {
-                            appDB = doc.data();
+                            appDB = unpackSpreadsheets(doc.data());
                             if(!appDB.currentCompanyId || !appDB.companies.find(c => c.id === appDB.currentCompanyId)) {
                                 appDB.currentCompanyId = appDB.companies[0].id;
                             }
@@ -709,10 +709,39 @@
             if(pendingSaves > 0) { e.preventDefault(); e.returnValue = ''; }
         });
 
+        // O Firestore não aceita listas dentro de listas — e é assim que a planilha guarda
+        // os dados (lista de linhas, cada linha uma lista de células). Por isso, ao salvar,
+        // cada planilha vira um texto (JSON) só nesse momento; ao carregar, volta ao normal.
+        function packSpreadsheetsForSave(db) {
+            const clone = JSON.parse(JSON.stringify(db));
+            if(clone.spreadsheets) {
+                Object.keys(clone.spreadsheets).forEach(companyId => {
+                    (clone.spreadsheets[companyId] || []).forEach(sheet => {
+                        if(Array.isArray(sheet.data)) sheet.data = JSON.stringify(sheet.data);
+                    });
+                });
+            }
+            return clone;
+        }
+
+        function unpackSpreadsheets(db) {
+            if(db.spreadsheets) {
+                Object.keys(db.spreadsheets).forEach(companyId => {
+                    (db.spreadsheets[companyId] || []).forEach(sheet => {
+                        if(typeof sheet.data === 'string') {
+                            try { sheet.data = JSON.parse(sheet.data); } catch(e) { sheet.data = []; }
+                        }
+                    });
+                });
+            }
+            return db;
+        }
+
         function saveToCloud() {
             if(!cloudDB) return;
             pendingSaves++;
-            cloudDB.collection("luppus_system").doc("node_state").set(appDB)
+            const payload = packSpreadsheetsForSave(appDB);
+            cloudDB.collection("luppus_system").doc("node_state").set(payload)
                 .catch(err => { if(!isClientMode) showToast("Erro de Sincronização."); })
                 .finally(() => { pendingSaves--; });
         }
