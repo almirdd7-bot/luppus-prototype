@@ -47,6 +47,7 @@
         let forecastChartInstance = null;
         let categoryChartInstance = null;
         let cloudDB = null;
+        let currentDocId = 'node_state'; // vira o UID de cada conta autenticada — ver initFirebase()
         let pendingOFX = [];
         let filterTimeout;
 
@@ -660,7 +661,12 @@
                 }
                 cloudDB = app.firestore();
 
-                const docRef = cloudDB.collection("luppus_system").doc("node_state");
+                // Cada conta autenticada tem seu próprio documento (isolado por UID) — evita
+                // que empresas/clientes diferentes leiam ou sobrescrevam os dados uns dos outros.
+                const currentUser = app.auth ? app.auth().currentUser : null;
+                currentDocId = currentUser ? currentUser.uid : 'node_state';
+
+                const docRef = cloudDB.collection("luppus_system").doc(currentDocId);
                 docRef.onSnapshot((doc) => {
                     hideLoadingOverlay(() => {
                         const entryDateEl = document.getElementById('entry-date');
@@ -741,7 +747,7 @@
             if(!cloudDB) return;
             pendingSaves++;
             const payload = packSpreadsheetsForSave(appDB);
-            cloudDB.collection("luppus_system").doc("node_state").set(payload)
+            cloudDB.collection("luppus_system").doc(currentDocId).set(payload)
                 .catch(err => { if(!isClientMode) showToast("Erro de Sincronização."); })
                 .finally(() => { pendingSaves--; });
         }
