@@ -721,6 +721,41 @@
             if(activePanel) activePanel.classList.add('active');
         }
 
+        const MAILER_URL = 'https://luppus-mailer.luppus.workers.dev';
+        const MAILER_APP_SECRET = 'ef98de4a84dd53f625dcef630ad9553f1e2bfa420335ffeb';
+
+        function sendTestReport() {
+            const emailInput = document.getElementById('contact-email-input');
+            const to = emailInput ? emailInput.value.trim() : '';
+            if(!to) { showToast('Preencha o e-mail de contato na aba Cliente antes de testar.'); return; }
+
+            const company = appDB.companies.find(c => c.id === appDB.currentCompanyId);
+            const receita = document.getElementById('total-in') ? document.getElementById('total-in').textContent : 'R$ 0,00';
+            const custos = document.getElementById('total-out') ? document.getElementById('total-out').textContent : 'R$ 0,00';
+            const resultado = document.getElementById('net-cash') ? document.getElementById('net-cash').textContent : 'R$ 0,00';
+
+            showToast('Enviando relatório de teste...');
+            fetch(MAILER_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-App-Secret': MAILER_APP_SECRET },
+                body: JSON.stringify({
+                    to,
+                    type: 'weekly_report',
+                    companyName: company ? company.name : '',
+                    data: { receita, custos, resultado }
+                })
+            })
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .then(({ ok, data }) => {
+                if(ok) {
+                    showToast('Relatório de teste enviado! Verifique a caixa de entrada.');
+                } else {
+                    showToast('Falha ao enviar: ' + (data.message || data.error || 'erro desconhecido'));
+                }
+            })
+            .catch(() => showToast('Falha de conexão ao enviar o relatório.'));
+        }
+
         function openSupportChat() {
             if(typeof Tawk_API !== 'undefined' && Tawk_API.maximize) {
                 Tawk_API.maximize();

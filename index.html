@@ -585,7 +585,7 @@
                                 </div>
                                 <div class="settings-row">
                                     <div class="settings-row-label">e-mail de contato</div>
-                                    <div class="settings-row-control"><input type="text" placeholder="voce@empresa.com"></div>
+                                    <div class="settings-row-control"><input type="text" id="contact-email-input" placeholder="voce@empresa.com"></div>
                                 </div>
                                 <div class="settings-row">
                                     <div class="settings-row-label">WhatsApp para contato</div>
@@ -714,15 +714,11 @@
                                     <div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" disabled><span class="toggle-slider"></span></label></div>
                                 </div>
                                 <div class="settings-row">
-                                    <div class="settings-row-label">relatório semanal por e-mail</div>
-                                    <div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" disabled><span class="toggle-slider"></span></label></div>
-                                </div>
-                                <div class="settings-row">
-                                    <div class="settings-row-label">relatório semanal por WhatsApp</div>
-                                    <div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" disabled><span class="toggle-slider"></span></label></div>
+                                    <div class="settings-row-label">relatório semanal por e-mail<small>Envio automático ainda não agendado — use o botão ao lado para testar o envio agora.</small></div>
+                                    <div class="settings-row-control"><button type="button" class="outline-btn" onclick="sendTestReport()">enviar teste agora</button></div>
                                 </div>
                             </div>
-                            <p class="support-note">Depende de um serviço de notificação por e-mail e WhatsApp no back-end — ainda não existe.</p>
+                            <p class="support-note">Envio por e-mail já é real (via Resend) — usa o e-mail de contato da aba "cliente" logo acima. Envio agendado automaticamente e notificação por WhatsApp ainda dependem de configuração adicional.</p>
                         </div>
                     </div>
                 </div>
