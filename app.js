@@ -702,13 +702,19 @@
             if(authApp) authApp.auth().signOut();
         }
 
+        // Evita perder um salvamento em andamento se a página for fechada/recarregada
+        // antes do navegador confirmar o envio pro servidor.
+        let pendingSaves = 0;
+        window.addEventListener('beforeunload', (e) => {
+            if(pendingSaves > 0) { e.preventDefault(); e.returnValue = ''; }
+        });
+
         function saveToCloud() {
-            if(cloudDB && !isClientMode) {
-                cloudDB.collection("luppus_system").doc("node_state").set(appDB)
-                .catch(err => showToast("Erro de Sincronização."));
-            } else if (cloudDB && isClientMode) {
-                 cloudDB.collection("luppus_system").doc("node_state").set(appDB);
-            }
+            if(!cloudDB) return;
+            pendingSaves++;
+            cloudDB.collection("luppus_system").doc("node_state").set(appDB)
+                .catch(err => { if(!isClientMode) showToast("Erro de Sincronização."); })
+                .finally(() => { pendingSaves--; });
         }
 
         function renderCompanyDropdown() {
