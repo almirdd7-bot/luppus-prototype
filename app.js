@@ -694,39 +694,56 @@
                 currentDocId = currentUser ? currentUser.uid : 'node_state';
 
                 const docRef = cloudDB.collection("luppus_system").doc(currentDocId);
-                docRef.onSnapshot((doc) => {
-                    hideLoadingOverlay(() => {
-                        const entryDateEl = document.getElementById('entry-date');
-                        if(entryDateEl) entryDateEl.value = getTodayDate();
-
-                        if (doc.exists) {
-                            appDB = unpackSpreadsheets(doc.data());
-                            if(!appDB.currentCompanyId || !appDB.companies.find(c => c.id === appDB.currentCompanyId)) {
-                                appDB.currentCompanyId = appDB.companies[0].id;
-                            }
-                            if(!appDB.spreadsheets) appDB.spreadsheets = {};
-                            if(!appDB.vault) appDB.vault = {};
-
-                            renderCompanyDropdown();
-                            renderCategoryUI();
-                            applySmartSearch();
-                            renderVault();
-                            if(!isClientMode && document.getElementById('view-planilhas').classList.contains('active')) initSpreadsheet();
-                        } else {
-                            saveToCloud();
-                            renderCompanyDropdown();
-                            renderCategoryUI();
-                            applySmartSearch();
-                        }
-                    });
-                }, (error) => {
-                    showLoginError("Acesso Negado.<br>Verifique as Regras de Segurança no Firebase.");
-                    doLogoutFallback();
-                });
+                attachFirestoreListener(docRef, 0);
             } catch(e) {
                 showLoginError("Erro na Conexão:<br>" + e.message);
                 doLogoutFallback();
             }
+        }
+
+        // Erros de rede/serviço passageiros (ex: instabilidade momentânea) não significam bloqueio
+        // de permissão de verdade — vale tentar de novo antes de mostrar um erro pro usuário.
+        const FIRESTORE_TRANSIENT_CODES = ['unavailable', 'deadline-exceeded', 'cancelled', 'aborted', 'resource-exhausted', 'unknown', 'internal'];
+        const FIRESTORE_MAX_RETRIES = 3;
+
+        function attachFirestoreListener(docRef, attempt) {
+            docRef.onSnapshot((doc) => {
+                hideLoadingOverlay(() => {
+                    const entryDateEl = document.getElementById('entry-date');
+                    if(entryDateEl) entryDateEl.value = getTodayDate();
+
+                    if (doc.exists) {
+                        appDB = unpackSpreadsheets(doc.data());
+                        if(!appDB.currentCompanyId || !appDB.companies.find(c => c.id === appDB.currentCompanyId)) {
+                            appDB.currentCompanyId = appDB.companies[0].id;
+                        }
+                        if(!appDB.spreadsheets) appDB.spreadsheets = {};
+                        if(!appDB.vault) appDB.vault = {};
+
+                        renderCompanyDropdown();
+                        renderCategoryUI();
+                        applySmartSearch();
+                        renderVault();
+                        if(!isClientMode && document.getElementById('view-planilhas').classList.contains('active')) initSpreadsheet();
+                    } else {
+                        saveToCloud();
+                        renderCompanyDropdown();
+                        renderCategoryUI();
+                        applySmartSearch();
+                    }
+                });
+            }, (error) => {
+                if(FIRESTORE_TRANSIENT_CODES.includes(error.code) && attempt < FIRESTORE_MAX_RETRIES) {
+                    setTimeout(() => attachFirestoreListener(docRef, attempt + 1), 1500 * (attempt + 1));
+                    return;
+                }
+                if(error.code === 'permission-denied' || error.code === 'unauthenticated') {
+                    showLoginError("Acesso Negado.<br>Verifique as Regras de Segurança no Firebase.");
+                } else {
+                    showLoginError("Problema de conexão com o servidor.<br>Verifique sua internet e tente novamente.");
+                }
+                doLogoutFallback();
+            });
         }
 
         function doLogoutFallback() {
