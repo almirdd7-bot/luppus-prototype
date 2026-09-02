@@ -1899,6 +1899,20 @@
             return `<span class="chip chip-success">válido até ${expiry}</span>`;
         }
 
+        // Política de retenção padrão por categoria — só entra em jogo quando o documento não tem
+        // uma validade explícita definida pelo usuário (a validade sempre tem prioridade).
+        const VAULT_RETENTION_YEARS = { 'Nota Fiscal': 5, 'Contrato': 5, 'Comprovante': 5, 'Certidão': 2, 'Outro': 2 };
+        function vaultRetentionBadge(d) {
+            if(d.expiry) return '';
+            const years = VAULT_RETENTION_YEARS[d.category] || VAULT_RETENTION_YEARS['Outro'];
+            const uploadDate = parseBRDate(d.date);
+            if(!uploadDate) return '';
+            const eligibleDate = new Date(uploadDate); eligibleDate.setFullYear(eligibleDate.getFullYear() + years);
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            if(today >= eligibleDate) return `<span class="chip chip-danger">elegível para descarte (retenção de ${years} anos vencida)</span>`;
+            return '';
+        }
+
         // Comprime imagens grandes (reduzindo qualidade e depois dimensões) até caberem no limite,
         // em vez de simplesmente rejeitar o arquivo. PDFs não têm como ser comprimidos no navegador.
         const MAX_FILE_BYTES = 512000;
@@ -1968,18 +1982,51 @@
             const originalLabel = btn ? btn.innerText : '';
             if(btn) { btn.disabled = true; btn.innerText = 'processando...'; }
 
-            fileToDataURLCompressed(file, MAX_FILE_BYTES).then((dataUrl) => {
+            fileToDataURLCompressed(file, MAX_FILE_BYTES).then(async (dataUrl) => {
                 if(!appDB.vault) appDB.vault = {};
                 if(!appDB.vault[appDB.currentCompanyId]) appDB.vault[appDB.currentCompanyId] = [];
-                appDB.vault[appDB.currentCompanyId].push({ date: getTodayDate(), name: name, category: category, expiry: expiry, file: { data: dataUrl, fname: file.name, mime: file.type } });
+                const docs = appDB.vault[appDB.currentCompanyId];
+
+                const hash = await sha256Hex(dataUrl);
+                const dupByContent = docs.find(d => d.hash === hash);
+                if(dupByContent && !confirm(`Este arquivo parece idêntico a "${dupByContent.name}", já salvo no cofre. Enviar mesmo assim?`)) {
+                    vaultUploadInFlight = false; if(btn) { btn.disabled = false; btn.innerText = originalLabel; }
+                    return;
+                }
+
+                const existingIdx = docs.findIndex(d => d.name.toLowerCase() === name.toLowerCase());
+                if(existingIdx !== -1) {
+                    const existing = docs[existingIdx];
+                    if(!existing.versions) existing.versions = [];
+                    existing.versions.unshift({ data: existing.file.data, fname: existing.file.fname, mime: existing.file.mime, uploadedAt: existing.date });
+                    if(existing.versions.length > 5) existing.versions.length = 5;
+                    existing.file = { data: dataUrl, fname: file.name, mime: file.type };
+                    existing.date = getTodayDate();
+                    existing.category = category;
+                    existing.expiry = expiry;
+                    existing.hash = hash;
+                    showToast(`Nova versão de "${name}" salva (${existing.versions.length} anterior${existing.versions.length === 1 ? '' : 'es'} preservada${existing.versions.length === 1 ? '' : 's'}).`);
+                } else {
+                    docs.push({ date: getTodayDate(), name: name, category: category, expiry: expiry, hash: hash, file: { data: dataUrl, fname: file.name, mime: file.type } });
+                    showToast("Salvo no Cofre.");
+                }
+
+                logVaultAccess(name, 'upload');
                 saveToCloud();
                 document.getElementById('vault-name').value = '';
                 document.getElementById('vault-expiry').value = '';
                 fileInput.value = '';
                 renderVault();
-                showToast("Salvo no Cofre.");
             }).catch(() => showToast("Não foi possível processar o arquivo."))
             .finally(() => { vaultUploadInFlight = false; if(btn) { btn.disabled = false; btn.innerText = originalLabel; } });
+        }
+
+        function logVaultAccess(docName, action) {
+            if(!appDB.vaultAccessLog) appDB.vaultAccessLog = {};
+            if(!appDB.vaultAccessLog[appDB.currentCompanyId]) appDB.vaultAccessLog[appDB.currentCompanyId] = [];
+            const log = appDB.vaultAccessLog[appDB.currentCompanyId];
+            log.push({ ts: new Date().toISOString(), user: getCurrentUserLabel(), action, docName });
+            if(log.length > 200) log.shift();
         }
 
         function renderVault() {
@@ -1988,7 +2035,14 @@
             ul.innerHTML = '';
             const allDocs = (appDB.vault && appDB.vault[appDB.currentCompanyId]) ? appDB.vault[appDB.currentCompanyId] : [];
 
-            if(allDocs.length === 0) { ul.innerHTML = '<li class="empty-state">Nenhum documento no cofre ainda.</li>'; updatePainelAlerts(); return; }
+            if(allDocs.length === 0) {
+                ul.innerHTML = '<li class="empty-state">Nenhum documento no cofre ainda.</li>';
+                updatePainelAlerts();
+                renderVaultChecklist(allDocs);
+                renderVaultStorageNote(allDocs);
+                renderVaultAccessLog();
+                return;
+            }
 
             const searchEl = document.getElementById('vault-search');
             const query = searchEl ? searchEl.value.trim().toLowerCase() : '';
@@ -2003,14 +2057,16 @@
                 let deleteBtnHtml = isClientMode ? '' : `<button class="icon-btn" onclick="deleteVault(${i})" aria-label="excluir documento"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>`;
                 const categoryChip = d.category ? `<span class="chip">${escapeHtml(d.category)}</span>` : '';
                 const expiryChip = vaultExpiryBadge(d.expiry);
+                const retentionChip = vaultRetentionBadge(d);
+                const versionsChip = (d.versions && d.versions.length > 0) ? `<span class="chip">${d.versions.length} versão${d.versions.length === 1 ? '' : 'ões'} anterior${d.versions.length === 1 ? '' : 'es'}</span>` : '';
                 li.innerHTML = `
                     <div>
                         <strong style="color: var(--text-main);">${escapeHtml(d.name)}</strong> <span style="color:var(--text-muted); font-size:10px;">(${d.date})</span>
-                        ${(categoryChip || expiryChip) ? `<div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">${categoryChip}${expiryChip}</div>` : ''}
+                        ${(categoryChip || expiryChip || retentionChip || versionsChip) ? `<div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">${categoryChip}${expiryChip}${retentionChip}${versionsChip}</div>` : ''}
                     </div>
                     <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
                         <button class="icon-btn" onclick="openVaultPreview(${i})" aria-label="visualizar documento"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
-                        <a href="${d.file.data}" download="${d.file.fname}" class="attachment-link">Download</a>
+                        <a href="${d.file.data}" download="${d.file.fname}" class="attachment-link" onclick="logVaultAccess('${escapeHtml(d.name)}', 'download'); saveToCloud(); renderVaultAccessLog();">Download</a>
                         ${deleteBtnHtml}
                     </div>
                 `;
@@ -2019,6 +2075,86 @@
 
             if(matchCount === 0) { ul.innerHTML = '<li class="empty-state">Nenhum documento encontrado.</li>'; }
             updatePainelAlerts();
+            renderVaultChecklist(allDocs);
+            renderVaultStorageNote(allDocs);
+            renderVaultAccessLog();
+        }
+
+        const VAULT_REQUIRED_DOCS = ['CNPJ', 'Contrato Social', 'Alvará', 'Certidão Negativa'];
+        function renderVaultChecklist(allDocs) {
+            const body = document.getElementById('vault-checklist-body');
+            if(!body) return;
+            const names = allDocs.map(d => d.name.toLowerCase());
+            const rows = VAULT_REQUIRED_DOCS.map(req => {
+                const found = names.some(n => n.includes(req.toLowerCase()) || req.toLowerCase().includes(n));
+                const icon = found
+                    ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+                    : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle></svg>`;
+                return `<div class="outlier-row"><span style="display:flex; align-items:center; gap:10px;">${icon} ${escapeHtml(req)}</span><span style="color:var(--text-muted); font-size:11px;">${found ? 'encontrado' : 'faltando'}</span></div>`;
+            }).join('');
+            const completeCount = VAULT_REQUIRED_DOCS.filter(req => names.some(n => n.includes(req.toLowerCase()) || req.toLowerCase().includes(n))).length;
+            body.innerHTML = `<p class="support-note" style="margin-top:0;">${completeCount} de ${VAULT_REQUIRED_DOCS.length} documentos de referência encontrados.</p>` + rows;
+        }
+
+        function renderVaultStorageNote(allDocs) {
+            const el = document.getElementById('vault-storage-note');
+            if(!el) return;
+            const totalChars = allDocs.reduce((sum, d) => {
+                let size = (d.file && d.file.data) ? d.file.data.length : 0;
+                if(d.versions) size += d.versions.reduce((s, v) => s + (v.data ? v.data.length : 0), 0);
+                return sum + size;
+            }, 0);
+            const approxBytes = totalChars * 0.75; // base64 ~ 4/3 do tamanho binário real
+            const kb = approxBytes / 1024;
+            const softLimitKb = 700; // margem de segurança abaixo do limite de 1 MiB por documento do Firestore
+            const pct = Math.min(100, (kb / softLimitKb) * 100);
+            const sizeLabel = kb > 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${kb.toFixed(0)} KB`;
+            const color = pct > 80 ? 'var(--danger)' : (pct > 50 ? 'var(--gold)' : 'var(--text-muted)');
+            el.innerHTML = `<span style="color:${color};">cofre usando ~${sizeLabel}</span> de um limite prático de ~700 KB neste registro na nuvem (o restante é dividido com lançamentos e planilhas).`;
+        }
+
+        function renderVaultAccessLog() {
+            const card = document.getElementById('vault-accesslog-card');
+            const body = document.getElementById('vault-accesslog-body');
+            if(!card || !body) return;
+            if(isClientMode) { card.style.display = 'none'; return; }
+            card.style.display = 'block';
+            const log = (appDB.vaultAccessLog && appDB.vaultAccessLog[appDB.currentCompanyId]) || [];
+            if(log.length === 0) { body.innerHTML = '<p class="support-note" style="margin:0;">Nenhum acesso registrado ainda.</p>'; return; }
+            const actionLabels = { view: 'visualizou', download: 'baixou', upload: 'enviou' };
+            body.innerHTML = log.slice().reverse().slice(0, 15).map(entry => {
+                const when = new Date(entry.ts);
+                const whenLabel = isNaN(when.getTime()) ? entry.ts : when.toLocaleString('pt-BR');
+                return `<div class="aging-row"><span>${escapeHtml(entry.user)} ${actionLabels[entry.action] || entry.action} <strong>${escapeHtml(entry.docName)}</strong></span><span style="color:var(--text-muted); font-size:10px;">${whenLabel}</span></div>`;
+            }).join('');
+        }
+
+        async function downloadVaultZip() {
+            const allDocs = (appDB.vault && appDB.vault[appDB.currentCompanyId]) ? appDB.vault[appDB.currentCompanyId] : [];
+            if(allDocs.length === 0) { showToast('Nenhum documento no cofre para baixar.'); return; }
+            if(typeof JSZip === 'undefined') { showToast('Biblioteca de compactação ainda carregando, tente novamente em instantes.'); return; }
+            showToast('Preparando arquivo .zip...');
+            const zip = new JSZip();
+            const manifest = [];
+            allDocs.forEach((d, i) => {
+                const dataUrl = d.file.data;
+                const commaIdx = dataUrl.indexOf(',');
+                const base64 = commaIdx !== -1 ? dataUrl.slice(commaIdx + 1) : dataUrl;
+                const safeName = `${i + 1}_${d.file.fname}`.replace(/[\\/:*?"<>|]/g, '_');
+                zip.file(safeName, base64, { base64: true });
+                manifest.push({ arquivo: safeName, nome: d.name, categoria: d.category || '', data: d.date, validade: d.expiry || '' });
+                logVaultAccess(d.name, 'download');
+            });
+            zip.file('manifest.json', JSON.stringify(manifest, null, 2));
+            saveToCloud();
+            const blob = await zip.generateAsync({ type: 'blob' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `LUPPUS_cofre_${Date.now()}.zip`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showToast('Download do .zip iniciado.');
         }
 
         function openFilePreview(title, fileObj) {
@@ -2042,6 +2178,9 @@
             const docs = appDB.vault[appDB.currentCompanyId];
             const d = docs[index];
             if(!d) return;
+            logVaultAccess(d.name, 'view');
+            saveToCloud();
+            renderVaultAccessLog();
             openFilePreview(d.name, { data: d.file.data, mime: d.file.mime, fname: d.file.fname });
         }
 

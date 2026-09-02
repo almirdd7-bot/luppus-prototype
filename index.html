@@ -23,7 +23,7 @@
     <title>LUPPUS | find the signal</title>
 
     <!-- CSS carrega primeiro para a tela de login aparecer estilizada o quanto antes -->
-    <link rel="stylesheet" href="style.css?v=20260902-7">
+    <link rel="stylesheet" href="style.css?v=20260902-8">
     <link rel="stylesheet" href="https://bossanova.uk/jspreadsheet/v4/jexcel.css" type="text/css" />
     <link rel="stylesheet" href="https://jsuites.net/v4/jsuites.css" type="text/css" />
 
@@ -34,6 +34,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
     <script src="https://bossanova.uk/jspreadsheet/v4/jexcel.js" defer></script>
     <script src="https://jsuites.net/v4/jsuites.js" defer></script>
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
@@ -648,10 +649,26 @@
                         <button class="action-btn" id="vault-submit-btn" style="width: 100%;" onclick="processVaultUpload()">salvar no cofre</button>
                     </div>
                     <div class="panel-card" style="grid-column: span 1;">
-                        <div class="panel-title">documentos seguros</div>
+                        <div class="panel-title">
+                            documentos seguros
+                            <button type="button" class="outline-btn hide-on-pdf" style="padding: 4px 10px; font-size: 10px;" onclick="downloadVaultZip()">baixar tudo (.zip)</button>
+                        </div>
                         <input type="text" id="vault-search" placeholder="Buscar por nome ou categoria..." style="margin-bottom: 18px;" oninput="renderVault()">
                         <ul class="recent-list" id="vault-list"></ul>
+                        <p id="vault-storage-note" class="support-note" style="margin-top: 14px;"></p>
                     </div>
+                </div>
+
+                <div class="panel-card hide-on-pdf">
+                    <div class="panel-title">checklist de documentos obrigatórios</div>
+                    <p class="support-note" style="margin-top: 0; margin-bottom: 16px;">Lista de referência do que uma empresa costuma precisar ter sempre à mão — marca automaticamente com base no nome dos documentos já salvos.</p>
+                    <div id="vault-checklist-body"></div>
+                </div>
+
+                <div class="panel-card hide-on-pdf hide-client" id="vault-accesslog-card">
+                    <div class="panel-title">log de acessos (LGPD)</div>
+                    <p class="support-note" style="margin-top: 0; margin-bottom: 16px;">Quem visualizou ou baixou cada documento — necessário para responder a uma auditoria ou solicitação de titular de dados.</p>
+                    <div id="vault-accesslog-body"></div>
                 </div>
             </div>
 
@@ -1328,7 +1345,7 @@
         </div>
     </div>
 
-    <script src="app.js?v=20260902-7" defer></script>
+    <script src="app.js?v=20260902-8" defer></script>
 
     <!--Start of Tawk.to Script-->
     <script type="text/javascript">
