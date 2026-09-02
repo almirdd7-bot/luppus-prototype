@@ -23,7 +23,7 @@
     <title>LUPPUS | find the signal</title>
 
     <!-- CSS carrega primeiro para a tela de login aparecer estilizada o quanto antes -->
-    <link rel="stylesheet" href="style.css?v=20260902-4">
+    <link rel="stylesheet" href="style.css?v=20260902-5">
     <link rel="stylesheet" href="https://bossanova.uk/jspreadsheet/v4/jexcel.css" type="text/css" />
     <link rel="stylesheet" href="https://jsuites.net/v4/jsuites.css" type="text/css" />
 
@@ -483,11 +483,24 @@
                         </div>
                         <div class="form-group"><label for="forecast-threshold">limite mínimo de saldo (opcional)</label><input type="number" id="forecast-threshold" placeholder="0,00" oninput="updateForecasting()"></div>
                     </div>
+                    <div class="form-group" style="display:flex; align-items:center; gap:10px; margin-top:5px;">
+                        <label class="toggle-switch"><input type="checkbox" id="forecast-montecarlo-toggle" onchange="updateForecasting()"><span class="toggle-slider"></span></label>
+                        <label for="forecast-montecarlo-toggle" style="margin-bottom:0; text-transform:none; font-size:12px; color:var(--text-muted); cursor:pointer;">usar faixa de probabilidade (simulação de Monte Carlo) em vez de cenários fixos</label>
+                    </div>
                     <div class="chart-container" style="height: 300px;">
                         <p id="forecast-empty-state" class="empty-state">Sem lançamentos suficientes para projetar o caixa ainda.</p>
                         <canvas id="forecastChart" style="display: none;"></canvas>
                     </div>
                     <p id="forecast-threshold-warning" class="support-note" style="display: none; color: var(--danger); margin-top: 14px;"></p>
+                </div>
+
+                <div class="panel-card">
+                    <div class="panel-title">projeção por categoria</div>
+                    <p class="support-note" style="margin-top:0; margin-bottom:16px;">Quais categorias de custo puxam a projeção — cada uma extrapolada pela própria média diária histórica.</p>
+                    <div class="chart-container" style="height: 260px;">
+                        <p id="forecast-category-empty" class="empty-state">Sem custos categorizados e confirmados o suficiente ainda.</p>
+                        <canvas id="forecastCategoryChart" style="display:none;"></canvas>
+                    </div>
                 </div>
 
                 <div class="panel-card">
@@ -1285,7 +1298,7 @@
         </div>
     </div>
 
-    <script src="app.js?v=20260902-4" defer></script>
+    <script src="app.js?v=20260902-5" defer></script>
 
     <!--Start of Tawk.to Script-->
     <script type="text/javascript">

@@ -57,6 +57,7 @@
         let chartInstance = null;
         let biChartInstance = null;
         let forecastChartInstance = null;
+        let forecastCategoryChartInstance = null;
         let categoryChartInstance = null;
         let cloudDB = null;
         let currentDocId = 'node_state'; // vira o UID de cada conta autenticada — ver initFirebase()
@@ -1662,13 +1663,26 @@
             // garante que o último ponto histórico seja exatamente o caixa atual (arredondamentos de amostragem à parte)
             histValues[histValues.length - 1] = currentCash;
 
-            let futureLabels = []; let futureBase = []; let futureOpt = []; let futurePess = [];
+            let futureLabels = []; let futureBase = []; let futureOpt = []; let futurePess = []; let dayOffsets = [];
             for(let i = 1; i <= futureSteps; i++) {
                 const day = isWeeklyMode ? Math.round((91 / 13) * i) : Math.round((horizon / futureSteps) * i);
+                dayOffsets.push(day);
                 futureLabels.push(isWeeklyMode ? `Sem ${i}` : '+' + day + 'd');
                 futureBase.push(currentCash + baseDailyNet * day);
                 futureOpt.push(currentCash + optimisticDailyNet * day);
                 futurePess.push(currentCash + pessimisticDailyNet * day);
+            }
+
+            const useMonteCarlo = document.getElementById('forecast-montecarlo-toggle') && document.getElementById('forecast-montecarlo-toggle').checked;
+            let futureP10 = null, futureP90 = null;
+            if(useMonteCarlo) {
+                const dailySeries = computeDailyNetSeries(confirmedSorted, oldestDate, today);
+                const mcMean = dailySeries.length ? dailySeries.reduce((a,b) => a+b, 0) / dailySeries.length : baseDailyNet;
+                const mcVariance = dailySeries.length ? dailySeries.reduce((a,b) => a + Math.pow(b - mcMean, 2), 0) / dailySeries.length : 0;
+                const mcStd = Math.sqrt(mcVariance);
+                const percentiles = runMonteCarloSimulation(currentCash, mcMean, mcStd, dayOffsets, 300);
+                futureP10 = percentiles.map(p => p.p10);
+                futureP90 = percentiles.map(p => p.p90);
             }
 
             const labels = histLabels.concat(futureLabels);
@@ -1677,6 +1691,8 @@
             const baseSeries = nullPad.concat([currentCash], futureBase);
             const optSeries = nullPad.concat([currentCash], futureOpt);
             const pessSeries = nullPad.concat([currentCash], futurePess);
+            const p10Series = futureP10 ? nullPad.concat([currentCash], futureP10) : null;
+            const p90Series = futureP90 ? nullPad.concat([currentCash], futureP90) : null;
 
             const projectedEnd = futureBase[futureBase.length - 1];
             document.getElementById('forecast-30-label').textContent = isWeeklyMode ? 'saldo projetado (13 sem.)' : `saldo projetado (${horizon}d)`;
@@ -1696,10 +1712,15 @@
             if(forecastChartInstance) forecastChartInstance.destroy();
             const datasets = [
                 { label: 'Histórico', data: historicalSeries, borderColor: cssVar('--text-muted'), backgroundColor: 'transparent', fill: false, tension: 0.3, pointRadius: 2, spanGaps: false },
-                { label: 'Base', data: baseSeries, borderColor: cssVar('--champagne'), backgroundColor: verticalGradient(ctx, '--champagne', 300, 0.30, 0), fill: true, borderDash: [5, 5], tension: 0.3, pointBackgroundColor: cssVar('--champagne'), pointBorderColor: cssVar('--obsidian'), pointRadius: 3, pointHoverRadius: 6, spanGaps: false },
-                { label: 'Otimista', data: optSeries, borderColor: cssVar('--success'), backgroundColor: 'transparent', fill: false, borderDash: [2, 3], tension: 0.3, pointRadius: 0, spanGaps: false },
-                { label: 'Pessimista', data: pessSeries, borderColor: cssVar('--danger'), backgroundColor: 'transparent', fill: false, borderDash: [2, 3], tension: 0.3, pointRadius: 0, spanGaps: false }
+                { label: 'Base', data: baseSeries, borderColor: cssVar('--champagne'), backgroundColor: verticalGradient(ctx, '--champagne', 300, 0.30, 0), fill: true, borderDash: [5, 5], tension: 0.3, pointBackgroundColor: cssVar('--champagne'), pointBorderColor: cssVar('--obsidian'), pointRadius: 3, pointHoverRadius: 6, spanGaps: false }
             ];
+            if(useMonteCarlo && p10Series && p90Series) {
+                datasets.push({ label: 'Faixa provável (P10–P90, Monte Carlo)', data: p90Series, borderColor: 'transparent', backgroundColor: cssVarAlpha('--champagne', 0.12), pointRadius: 0, fill: '+1', spanGaps: false, tension: 0.3 });
+                datasets.push({ label: 'P10 (Monte Carlo)', data: p10Series, borderColor: cssVarAlpha('--champagne', 0.45), backgroundColor: 'transparent', pointRadius: 0, borderDash: [1, 3], fill: false, spanGaps: false, tension: 0.3 });
+            } else {
+                datasets.push({ label: 'Otimista', data: optSeries, borderColor: cssVar('--success'), backgroundColor: 'transparent', fill: false, borderDash: [2, 3], tension: 0.3, pointRadius: 0, spanGaps: false });
+                datasets.push({ label: 'Pessimista', data: pessSeries, borderColor: cssVar('--danger'), backgroundColor: 'transparent', fill: false, borderDash: [2, 3], tension: 0.3, pointRadius: 0, spanGaps: false });
+            }
             if(hasThreshold) {
                 datasets.push({ label: 'Limite Mínimo', data: labels.map(() => threshold), borderColor: cssVar('--danger'), borderDash: [3, 3], pointRadius: 0, fill: false, tension: 0, spanGaps: true });
             }
@@ -1719,6 +1740,105 @@
             }
 
             updateForecastFreshness();
+            renderForecastCategoryBreakdown(horizon, isWeeklyMode, futureSteps, dayOffsets);
+        }
+
+        // Devolve o fluxo líquido diário histórico dia a dia (0 nos dias sem lançamento) —
+        // é a base para calcular a volatilidade usada na simulação de Monte Carlo.
+        function localDateKey(d) { return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); }
+
+        function computeDailyNetSeries(confirmedSorted, oldestDate, today) {
+            if(!oldestDate) return [];
+            const byDay = {};
+            confirmedSorted.forEach(t => {
+                const key = localDateKey(t.date);
+                byDay[key] = (byDay[key] || 0) + t.amount;
+            });
+            const series = [];
+            const cursor = new Date(oldestDate);
+            while(cursor <= today) {
+                series.push(byDay[localDateKey(cursor)] || 0);
+                cursor.setDate(cursor.getDate() + 1);
+            }
+            return series;
+        }
+
+        // Box-Muller — gera um número aleatório com distribuição normal (média 0, desvio 1).
+        function gaussianRandom() {
+            let u = 0, v = 0;
+            while(u === 0) u = Math.random();
+            while(v === 0) v = Math.random();
+            return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+        }
+
+        // Roda N simulações de caminho aleatório (fluxo diário ~ Normal(média, desvio) observado no
+        // histórico real) e devolve os percentis 10/50/90 do saldo em cada dia de interesse.
+        function runMonteCarloSimulation(startCash, meanDaily, stdDaily, dayOffsets, numSims) {
+            const maxDay = Math.max.apply(null, dayOffsets);
+            const results = dayOffsets.map(() => []);
+            for(let sim = 0; sim < numSims; sim++) {
+                let cash = startCash;
+                let pointer = 0;
+                for(let day = 1; day <= maxDay; day++) {
+                    cash += meanDaily + stdDaily * gaussianRandom();
+                    while(pointer < dayOffsets.length && dayOffsets[pointer] === day) {
+                        results[pointer].push(cash);
+                        pointer++;
+                    }
+                }
+            }
+            return results.map(arr => {
+                arr.sort((a, b) => a - b);
+                const pick = (p) => arr[Math.min(arr.length - 1, Math.floor(arr.length * p))];
+                return { p10: pick(0.10), p50: pick(0.50), p90: pick(0.90) };
+            });
+        }
+
+        function renderForecastCategoryBreakdown(horizon, isWeeklyMode, futureSteps, dayOffsets) {
+            const canvas = document.getElementById('forecastCategoryChart');
+            const emptyEl = document.getElementById('forecast-category-empty');
+            if(!canvas) return;
+            const currentTx = (appDB.transactions[appDB.currentCompanyId] || []).filter(t => t.receipt && t.type === 'out');
+            const byCategory = {};
+            currentTx.forEach(t => {
+                const cat = t.category || 'sem categoria';
+                const d = parseBRDate(t.date);
+                if(!d) return;
+                if(!byCategory[cat]) byCategory[cat] = { total: 0, oldest: d };
+                byCategory[cat].total += t.amount;
+                if(d < byCategory[cat].oldest) byCategory[cat].oldest = d;
+            });
+            const cats = Object.keys(byCategory).filter(c => byCategory[c].total > 0);
+            if(cats.length < 2) {
+                if(emptyEl) emptyEl.style.display = 'block';
+                canvas.style.display = 'none';
+                if(forecastCategoryChartInstance) { forecastCategoryChartInstance.destroy(); forecastCategoryChartInstance = null; }
+                return;
+            }
+            if(emptyEl) emptyEl.style.display = 'none';
+            canvas.style.display = 'block';
+
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            cats.sort((a, b) => byCategory[b].total - byCategory[a].total);
+            const topCats = cats.slice(0, 6);
+            const labels = dayOffsets.map((d, i) => isWeeklyMode ? `Sem ${i + 1}` : '+' + d + 'd');
+            const palette = categoricalPalette(topCats.length);
+
+            const datasets = topCats.map((cat, idx) => {
+                const info = byCategory[cat];
+                const daysCovered = Math.max(1, Math.round((today - info.oldest) / 86400000));
+                const dailyAvg = info.total / daysCovered;
+                const data = dayOffsets.map(d => dailyAvg * d);
+                return { label: cat, data, backgroundColor: palette[idx], borderColor: palette[idx], fill: true, tension: 0.3, pointRadius: 0 };
+            });
+
+            const ctx = canvas.getContext('2d');
+            if(forecastCategoryChartInstance) forecastCategoryChartInstance.destroy();
+            forecastCategoryChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { y: { stacked: true, grid: { color: cssVar('--border') } }, x: { grid: { display: false } } }, plugins: { legend: { display: true, labels: { boxWidth: 12, font: { size: 10 } } } } }
+            });
         }
 
         function updateForecastFreshness() {
