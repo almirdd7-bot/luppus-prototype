@@ -23,7 +23,7 @@
     <title>LUPPUS | find the signal</title>
 
     <!-- CSS carrega primeiro para a tela de login aparecer estilizada o quanto antes -->
-    <link rel="stylesheet" href="style.css?v=20260902-6">
+    <link rel="stylesheet" href="style.css?v=20260902-7">
     <link rel="stylesheet" href="https://bossanova.uk/jspreadsheet/v4/jexcel.css" type="text/css" />
     <link rel="stylesheet" href="https://jsuites.net/v4/jsuites.css" type="text/css" />
 
@@ -585,12 +585,24 @@
                                     <div class="form-group"><label for="bi-type">Tipo de Gráfico</label>
                                         <select id="bi-type" onchange="updateBIChart()">
                                             <option value="bar">Barras</option><option value="line">Linhas</option><option value="pie">Pizza</option>
+                                            <option value="combo">Combinado (barra + % acumulado)</option>
                                         </select>
                                     </div>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group"><label for="bi-filter-col">Filtrar coluna</label><select id="bi-filter-col" onchange="updateBIFilterValues()"><option value="">nenhum</option></select></div>
                                     <div class="form-group"><label for="bi-filter-value">Valor do filtro</label><select id="bi-filter-value" onchange="updateBIChart()" disabled><option value="">todos</option></select></div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group"><label for="bi-benchmark">Linha de referência / meta (opcional)</label><input type="number" id="bi-benchmark" placeholder="ex: 20000" oninput="updateBIChart()"></div>
+                                    <div class="form-group" style="display:flex; align-items:flex-end; gap:8px; padding-bottom:6px;">
+                                        <label class="toggle-switch"><input type="checkbox" id="bi-compare-period" onchange="updateBIChart()"><span class="toggle-slider"></span></label>
+                                        <span style="font-size:12px; color:var(--text-muted);">comparar com o mês anterior (precisa de coluna de data)</span>
+                                    </div>
+                                </div>
+                                <div class="form-row" style="align-items:flex-end;">
+                                    <div class="form-group"><label for="bi-saved-views">visões salvas</label><select id="bi-saved-views" onchange="loadSavedBIView(this.value)"><option value="">selecione...</option></select></div>
+                                    <div class="form-group" style="flex:0 0 auto;"><button type="button" class="outline-btn" style="padding:6px 12px;" onclick="saveCurrentBIView()">salvar esta visão</button></div>
                                 </div>
                             </div>
                         </div>
@@ -609,10 +621,15 @@
                             <p id="bi-empty-state" class="empty-state">Envie um CSV ou use os lançamentos do sistema para começar a analisar seus dados.</p>
                             <canvas id="biCanvas" style="display: none;"></canvas>
                         </div>
+                        <p id="bi-insight" class="support-note" style="margin-top: 12px;"></p>
+                        <p class="support-note" style="margin-top: 4px;">clique em uma barra/fatia do gráfico para filtrar a tabela de dados abaixo.</p>
                     </div>
                 </div>
                 <div class="panel-card" id="bi-data-card" style="display: none; margin-top: 20px;">
-                    <div class="panel-title">dados importados</div>
+                    <div class="panel-title">
+                        dados importados
+                        <button type="button" class="outline-btn hide-on-pdf" id="bi-clear-drilldown-btn" style="padding: 4px 10px; font-size: 10px; display:none;" onclick="clearBIDrilldown()">limpar filtro</button>
+                    </div>
                     <div id="bi-data-table-container"></div>
                 </div>
             </div>
@@ -1311,7 +1328,7 @@
         </div>
     </div>
 
-    <script src="app.js?v=20260902-6" defer></script>
+    <script src="app.js?v=20260902-7" defer></script>
 
     <!--Start of Tawk.to Script-->
     <script type="text/javascript">

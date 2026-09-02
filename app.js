@@ -67,6 +67,7 @@
         let mySpreadsheet = null;
         let biData = [];
         let biHeaders = [];
+        let biDrilldownFilter = null;
         let spreadsheetUndoStash = {};
         let spreadsheetHistory = {}; // { sheetId: [{data, savedAt, savedBy}, ...] } — últimas 5 versões salvas
 
@@ -2672,8 +2673,11 @@
             document.getElementById('bi-controls').style.display = 'block';
             const biEmpty = document.getElementById('bi-empty-state'); if(biEmpty) biEmpty.style.display = 'none';
             const biCanvasEl = document.getElementById('biCanvas'); if(biCanvasEl) biCanvasEl.style.display = 'block';
+            biDrilldownFilter = null;
+            const clearBtn = document.getElementById('bi-clear-drilldown-btn'); if(clearBtn) clearBtn.style.display = 'none';
             updateBIFilterValues();
             renderBIDataTable();
+            renderSavedBIViewsList();
         }
 
         function updateBIFilterValues() {
@@ -2692,12 +2696,87 @@
             if(!container || !card) return;
             if(biData.length === 0) { card.style.display = 'none'; container.innerHTML = ''; return; }
             card.style.display = 'block';
-            const rows = biData.slice(0, 50);
+            let filteredData = biData;
+            if(biDrilldownFilter) filteredData = biData.filter(r => String(r[biDrilldownFilter.col] || 'N/A') === String(biDrilldownFilter.val));
+            const rows = filteredData.slice(0, 50);
             let html = '<div class="table-container"><table><thead><tr>' + biHeaders.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead><tbody>';
             rows.forEach(r => { html += '<tr>' + biHeaders.map(h => `<td>${r[h] !== undefined && r[h] !== null ? escapeHtml(r[h]) : '-'}</td>`).join('') + '</tr>'; });
             html += '</tbody></table></div>';
-            if(biData.length > 50) html += `<p class="support-note" style="margin-top:10px;">mostrando as primeiras 50 de ${biData.length} linhas.</p>`;
+            if(biDrilldownFilter) html += `<p class="support-note" style="margin-top:10px;">filtrado por ${escapeHtml(biDrilldownFilter.col)} = ${escapeHtml(String(biDrilldownFilter.val))} (${filteredData.length} linha${filteredData.length === 1 ? '' : 's'}).</p>`;
+            else if(filteredData.length > 50) html += `<p class="support-note" style="margin-top:10px;">mostrando as primeiras 50 de ${filteredData.length} linhas.</p>`;
             container.innerHTML = html;
+        }
+
+        function applyBIDrilldown(col, val) {
+            biDrilldownFilter = { col, val };
+            renderBIDataTable();
+            const btn = document.getElementById('bi-clear-drilldown-btn');
+            if(btn) btn.style.display = 'inline-block';
+        }
+
+        function clearBIDrilldown() {
+            biDrilldownFilter = null;
+            renderBIDataTable();
+            const btn = document.getElementById('bi-clear-drilldown-btn');
+            if(btn) btn.style.display = 'none';
+        }
+
+        function renderSavedBIViewsList() {
+            const sel = document.getElementById('bi-saved-views');
+            if(!sel) return;
+            const views = (appDB.biSavedViews && appDB.biSavedViews[appDB.currentCompanyId]) || [];
+            sel.innerHTML = '<option value="">selecione...</option>' + views.map((v, i) => `<option value="${i}">${escapeHtml(v.name)}</option>`).join('');
+        }
+
+        function saveCurrentBIView() {
+            const name = prompt('Nome para esta visão:');
+            if(!name) return;
+            if(!appDB.biSavedViews) appDB.biSavedViews = {};
+            if(!appDB.biSavedViews[appDB.currentCompanyId]) appDB.biSavedViews[appDB.currentCompanyId] = [];
+            const view = {
+                name: name.trim(),
+                xCol: document.getElementById('bi-x').value,
+                yCol: document.getElementById('bi-y').value,
+                agg: document.getElementById('bi-agg').value,
+                type: document.getElementById('bi-type').value,
+                filterCol: document.getElementById('bi-filter-col').value,
+                filterVal: document.getElementById('bi-filter-value').value,
+                benchmark: document.getElementById('bi-benchmark').value
+            };
+            appDB.biSavedViews[appDB.currentCompanyId].push(view);
+            saveToCloud();
+            renderSavedBIViewsList();
+            showToast('Visão salva.');
+        }
+
+        function loadSavedBIView(idxRaw) {
+            if(idxRaw === '') return;
+            const idx = parseInt(idxRaw, 10);
+            const views = (appDB.biSavedViews && appDB.biSavedViews[appDB.currentCompanyId]) || [];
+            const view = views[idx];
+            if(!view) return;
+            document.getElementById('bi-x').value = view.xCol;
+            document.getElementById('bi-y').value = view.yCol;
+            document.getElementById('bi-agg').value = view.agg;
+            document.getElementById('bi-type').value = view.type;
+            document.getElementById('bi-filter-col').value = view.filterCol;
+            updateBIFilterValues();
+            document.getElementById('bi-filter-value').value = view.filterVal;
+            document.getElementById('bi-benchmark').value = view.benchmark || '';
+            updateBIChart();
+        }
+
+        function renderBIInsight(labels, values, mainLabel, aggType) {
+            const el = document.getElementById('bi-insight');
+            if(!el) return;
+            if(!values || values.length === 0) { el.textContent = ''; return; }
+            const total = values.reduce((a, b) => a + b, 0);
+            let maxIdx = 0;
+            values.forEach((v, i) => { if(v > values[maxIdx]) maxIdx = i; });
+            const maxLabel = labels[maxIdx]; const maxVal = values[maxIdx];
+            const pct = total > 0 ? (maxVal / total) * 100 : 0;
+            const aggNames = { sum: 'soma', avg: 'média', count: 'contagem', max: 'máximo', min: 'mínimo' };
+            el.innerHTML = `<strong style="color: var(--text-main); font-style: normal;">${escapeHtml(String(maxLabel))}</strong> concentra o maior valor (${pct.toFixed(0)}% do total, ${aggNames[aggType] || ''} de ${maxVal.toLocaleString('pt-BR', {maximumFractionDigits: 2})}) entre ${labels.length} categoria${labels.length === 1 ? '' : 's'} analisadas.`;
         }
 
         function exportBIChart() {
@@ -2706,6 +2785,26 @@
             link.href = biChartInstance.toBase64Image();
             link.download = `luppus_grafico_${Date.now()}.png`;
             link.click();
+        }
+
+        function aggregateBIRows(rowsSubset, xCol, yCol, aggType) {
+            const groups = {};
+            rowsSubset.forEach(row => {
+                const xVal = row[xCol] || 'N/A';
+                const rawVal = row[yCol];
+                const yVal = typeof rawVal === 'number' ? rawVal : (parseFloat((rawVal||'0').toString().replace(/R\$/g,'').replace(/\./g,'').replace(/,/g,'.')) || 0);
+                if(!groups[xVal]) groups[xVal] = []; groups[xVal].push(yVal);
+            });
+            const grouped = {};
+            Object.keys(groups).forEach(k => {
+                const arr = groups[k];
+                if(aggType === 'avg') grouped[k] = arr.reduce((a,b) => a+b, 0) / arr.length;
+                else if(aggType === 'count') grouped[k] = arr.length;
+                else if(aggType === 'max') grouped[k] = Math.max(...arr);
+                else if(aggType === 'min') grouped[k] = Math.min(...arr);
+                else grouped[k] = arr.reduce((a,b) => a+b, 0);
+            });
+            return grouped;
         }
 
         function updateBIChart() {
@@ -2718,31 +2817,95 @@
             let rows = biData;
             if(filterCol && filterVal) rows = rows.filter(r => r[filterCol] === filterVal);
 
-            const groups = {};
-            rows.forEach(row => {
-                const xVal = row[xCol] || 'N/A';
-                const rawVal = row[yCol];
-                const yVal = typeof rawVal === 'number' ? rawVal : (parseFloat((rawVal||'0').toString().replace(/R\$/g,'').replace(/\./g,'').replace(/,/g,'.')) || 0);
-                if(!groups[xVal]) groups[xVal] = []; groups[xVal].push(yVal);
-            });
             const aggLabels = { sum: 'soma', avg: 'média', count: 'contagem', max: 'máximo', min: 'mínimo' };
-            const grouped = {};
-            Object.keys(groups).forEach(k => {
-                const arr = groups[k];
-                if(aggType === 'avg') grouped[k] = arr.reduce((a,b) => a+b, 0) / arr.length;
-                else if(aggType === 'count') grouped[k] = arr.length;
-                else if(aggType === 'max') grouped[k] = Math.max(...arr);
-                else if(aggType === 'min') grouped[k] = Math.min(...arr);
-                else grouped[k] = arr.reduce((a,b) => a+b, 0);
-            });
+            const grouped = aggregateBIRows(rows, xCol, yCol, aggType);
+            let labels = Object.keys(grouped);
+            let values = labels.map(l => grouped[l]);
+
+            if(type === 'combo') {
+                const combined = labels.map((l, i) => ({ l, v: values[i] })).sort((a, b) => b.v - a.v);
+                labels = combined.map(c => c.l); values = combined.map(c => c.v);
+            }
+
             const ctx = document.getElementById('biCanvas').getContext('2d');
             if(biChartInstance) biChartInstance.destroy();
-            const labels = Object.keys(grouped);
+
             let biBg;
             if (type === 'pie') biBg = categoricalPalette(labels.length);
             else if (type === 'line') biBg = verticalGradient(ctx, '--champagne', 300, 0.35, 0);
             else biBg = verticalGradient(ctx, '--champagne', 300, 0.85, 0.25);
-            biChartInstance = new Chart(ctx, { type: type, data: { labels: labels, datasets: [{ label: `${yCol} (${aggLabels[aggType]})`, data: Object.values(grouped), backgroundColor: biBg, borderColor: cssVar('--champagne'), borderWidth: 2, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, plugins:{legend:{display:type==='pie'}} } });
+
+            const mainLabel = `${yCol} (${aggLabels[aggType]})`;
+            const chartType = type === 'combo' ? 'bar' : type;
+            const datasets = [{ label: mainLabel, data: values, backgroundColor: biBg, borderColor: cssVar('--champagne'), borderWidth: 2, fill: type !== 'pie', yAxisID: 'y' }];
+
+            const comparePeriod = document.getElementById('bi-compare-period').checked;
+            if(comparePeriod && type !== 'pie' && type !== 'combo') {
+                const dateCol = biHeaders.find(h => /data|date/i.test(h));
+                if(!dateCol) {
+                    showToast('Nenhuma coluna de data encontrada para comparar períodos.');
+                } else {
+                    const now = new Date();
+                    const curMonth = now.getMonth(), curYear = now.getFullYear();
+                    let prevMonth = curMonth - 1, prevYear = curYear; if(prevMonth < 0) { prevMonth = 11; prevYear--; }
+                    const parseAny = (v) => parseBRDate(v) || (v ? new Date(v) : null);
+                    const curRows = rows.filter(r => { const d = parseAny(r[dateCol]); return d && d.getMonth() === curMonth && d.getFullYear() === curYear; });
+                    const prevRows = rows.filter(r => { const d = parseAny(r[dateCol]); return d && d.getMonth() === prevMonth && d.getFullYear() === prevYear; });
+                    const curG = aggregateBIRows(curRows, xCol, yCol, aggType);
+                    const prevG = aggregateBIRows(prevRows, xCol, yCol, aggType);
+                    values = labels.map(l => curG[l] || 0);
+                    const prevValues = labels.map(l => prevG[l] || 0);
+                    datasets[0].data = values;
+                    datasets[0].label = mainLabel + ' (mês atual)';
+                    datasets.push({ label: mainLabel + ' (mês anterior)', data: prevValues, backgroundColor: 'transparent', borderColor: cssVar('--text-muted'), borderWidth: 2, borderDash: [4, 3], fill: false, yAxisID: 'y' });
+                }
+            }
+
+            if(values.length > 2 && type !== 'pie') {
+                const n = values.length;
+                const xs = values.map((_, i) => i);
+                const meanX = xs.reduce((a, b) => a + b, 0) / n;
+                const meanY = values.reduce((a, b) => a + b, 0) / n;
+                let num = 0, den = 0;
+                for(let i = 0; i < n; i++) { num += (xs[i] - meanX) * (values[i] - meanY); den += Math.pow(xs[i] - meanX, 2); }
+                const slope = den !== 0 ? num / den : 0;
+                const intercept = meanY - slope * meanX;
+                const trendData = xs.map(x => slope * x + intercept);
+                datasets.push({ label: 'Tendência', data: trendData, type: 'line', borderColor: cssVarAlpha('--champagne', 0.6), borderDash: [2, 2], pointRadius: 0, fill: false, yAxisID: 'y' });
+            }
+
+            const benchmarkRaw = document.getElementById('bi-benchmark').value;
+            const benchmark = benchmarkRaw === '' ? null : parseFloat(benchmarkRaw);
+            if(benchmark !== null && !isNaN(benchmark) && type !== 'pie') {
+                datasets.push({ label: 'Meta/Referência', data: labels.map(() => benchmark), type: 'line', borderColor: cssVar('--danger'), borderDash: [3, 3], pointRadius: 0, fill: false, yAxisID: 'y' });
+            }
+
+            let scalesConfig = { y: { grid: { color: cssVar('--border') } }, x: { grid: { display: false } } };
+            if(type === 'combo') {
+                const total = values.reduce((a, b) => a + b, 0);
+                let cum = 0;
+                const cumPct = values.map(v => { cum += v; return total > 0 ? (cum / total) * 100 : 0; });
+                datasets.push({ label: '% acumulado', data: cumPct, type: 'line', borderColor: cssVar('--success'), backgroundColor: 'transparent', pointRadius: 3, fill: false, yAxisID: 'y1' });
+                scalesConfig.y1 = { position: 'right', min: 0, max: 100, grid: { display: false }, ticks: { callback: v => v + '%' } };
+            }
+
+            biChartInstance = new Chart(ctx, {
+                type: chartType,
+                data: { labels: labels, datasets: datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false, animation: false,
+                    scales: type === 'pie' ? {} : scalesConfig,
+                    plugins: { legend: { display: type === 'pie' || datasets.length > 1 } },
+                    onClick: (evt, elements) => {
+                        if(elements && elements.length > 0) {
+                            const idx = elements[0].index;
+                            applyBIDrilldown(xCol, labels[idx]);
+                        }
+                    }
+                }
+            });
+
+            renderBIInsight(labels, values, mainLabel, aggType);
         }
 
         // --- WIPE E PDF ---
