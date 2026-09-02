@@ -898,6 +898,7 @@
 
             if(viewId === 'planilhas') initSpreadsheet();
             if(viewId === 'projecao') updateForecasting();
+            if(viewId === 'config') loadConfigSettingsUI();
 
             const navToggle = document.getElementById('nav-toggle');
             if(navToggle) navToggle.checked = false;
@@ -964,6 +965,140 @@
             document.querySelectorAll('.config-tab-panel').forEach(el => el.classList.remove('active'));
             const activePanel = document.getElementById('config-tab-' + tab);
             if(activePanel) activePanel.classList.add('active');
+        }
+
+        let notifiedRiskCriticalFor = null;
+        let notifiedBelowThresholdFor = null;
+        function checkForecastNotifications(isCritical, projectedEnd) {
+            const prefs = (appDB.notificationPrefs && appDB.notificationPrefs[appDB.currentCompanyId]) || {};
+            const key = appDB.currentCompanyId;
+
+            if(prefs.riskCritical && isCritical && notifiedRiskCriticalFor !== key) {
+                showToast('⚠ risco de caixa crítico: a projeção indica saldo negativo no horizonte atual.');
+                notifiedRiskCriticalFor = key;
+            } else if(!isCritical) {
+                notifiedRiskCriticalFor = null;
+            }
+
+            const thresholdVal = parseFloat(prefs.balanceThreshold);
+            if(prefs.balanceThreshold && !isNaN(thresholdVal)) {
+                if(projectedEnd < thresholdVal && notifiedBelowThresholdFor !== key) {
+                    showToast(`⚠ saldo projetado (R$ ${projectedEnd.toLocaleString('pt-BR', {minimumFractionDigits: 2})}) abaixo do limite definido (R$ ${thresholdVal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}).`);
+                    notifiedBelowThresholdFor = key;
+                } else if(projectedEnd >= thresholdVal) {
+                    notifiedBelowThresholdFor = null;
+                }
+            }
+        }
+
+        function loadConfigSettingsUI() {
+            const prefs = (appDB.notificationPrefs && appDB.notificationPrefs[appDB.currentCompanyId]) || {};
+            const riskEl = document.getElementById('notify-risk-critical');
+            const balEl = document.getElementById('notify-balance-threshold');
+            const highValEl = document.getElementById('notify-high-value-entry');
+            if(riskEl) riskEl.checked = !!prefs.riskCritical;
+            if(balEl) balEl.value = prefs.balanceThreshold || '';
+            if(highValEl) highValEl.checked = !!prefs.highValueEntry;
+
+            const thresholdEl = document.getElementById('approval-threshold-input');
+            if(thresholdEl) thresholdEl.value = (appDB.approvalThreshold && appDB.approvalThreshold[appDB.currentCompanyId]) || '';
+
+            renderAccessReviewNote();
+            renderSettingsAuditLog();
+        }
+
+        function saveNotificationPrefs() {
+            if(!appDB.notificationPrefs) appDB.notificationPrefs = {};
+            appDB.notificationPrefs[appDB.currentCompanyId] = {
+                riskCritical: document.getElementById('notify-risk-critical').checked,
+                balanceThreshold: document.getElementById('notify-balance-threshold').value,
+                highValueEntry: document.getElementById('notify-high-value-entry').checked
+            };
+            saveToCloud();
+            showToast('Preferências de notificação salvas.');
+        }
+
+        function saveApprovalThreshold() {
+            if(!appDB.approvalThreshold) appDB.approvalThreshold = {};
+            const val = document.getElementById('approval-threshold-input').value;
+            appDB.approvalThreshold[appDB.currentCompanyId] = val;
+            saveToCloud();
+            showToast('Limite de aprovação salvo.');
+        }
+
+        function renderAccessReviewNote() {
+            const el = document.getElementById('access-review-note');
+            if(!el) return;
+            if(!appDB.lastAccessReview) appDB.lastAccessReview = {};
+            const lastReview = appDB.lastAccessReview[appDB.currentCompanyId];
+            const lastDate = parseBRDate(lastReview);
+            if(!lastDate) { el.innerHTML = `<span style="color: var(--gold);">Ainda não há registro de revisão de acesso.</span> Boas práticas de governança recomendam revisar quem tem acesso a quê pelo menos a cada 3 meses.`; return; }
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const daysSince = Math.round((today - lastDate) / 86400000);
+            if(daysSince <= 90) el.textContent = `Última revisão de acesso: ${lastReview} (há ${daysSince} dia${daysSince === 1 ? '' : 's'}).`;
+            else el.innerHTML = `<span style="color: var(--danger);">Faz ${daysSince} dias desde a última revisão de acesso</span> — mais que o trimestre recomendado. Vale conferir quem ainda deveria ter acesso.`;
+        }
+
+        function markAccessReviewed() {
+            if(!appDB.lastAccessReview) appDB.lastAccessReview = {};
+            appDB.lastAccessReview[appDB.currentCompanyId] = getTodayDate();
+            saveToCloud();
+            renderAccessReviewNote();
+            showToast('Revisão de acesso registrada.');
+        }
+
+        function renderSettingsAuditLog() {
+            const container = document.getElementById('settings-audit-log-body');
+            if(!container) return;
+            const log = (appDB.auditLog && appDB.auditLog[appDB.currentCompanyId]) || [];
+            if(log.length === 0) { container.innerHTML = '<p class="support-note" style="margin:0;">Nenhuma alteração registrada ainda.</p>'; return; }
+            const actionLabels = { create: 'criou', edit: 'editou', delete: 'excluiu' };
+            const entityLabels = { transaction: 'lançamento', category: 'categoria', vault: 'documento do cofre' };
+            const rows = log.slice().reverse().slice(0, 20).map(e => {
+                const when = new Date(e.ts);
+                const whenLabel = isNaN(when.getTime()) ? e.ts : when.toLocaleString('pt-BR');
+                return `<tr><td>${escapeHtml(whenLabel)}</td><td>${escapeHtml(e.user)}</td><td>${actionLabels[e.action] || e.action} ${entityLabels[e.entity] || e.entity}: ${escapeHtml(String(e.entityLabel || ''))}</td></tr>`;
+            }).join('');
+            container.innerHTML = `<table><thead><tr><th>data</th><th>quem</th><th>alteração</th></tr></thead><tbody>${rows}</tbody></table>`;
+        }
+
+        function downloadMyDataJSON() {
+            const exportData = {
+                exportedAt: new Date().toISOString(),
+                company: appDB.companies.find(c => c.id === appDB.currentCompanyId) || null,
+                transactions: appDB.transactions ? appDB.transactions[appDB.currentCompanyId] || [] : [],
+                spreadsheets: appDB.spreadsheets ? appDB.spreadsheets[appDB.currentCompanyId] || [] : [],
+                vault: (appDB.vault ? appDB.vault[appDB.currentCompanyId] || [] : []).map(d => ({ name: d.name, category: d.category, date: d.date, expiry: d.expiry })),
+                customCategories: appDB.customCategories ? appDB.customCategories[appDB.currentCompanyId] || [] : [],
+                auditLog: appDB.auditLog ? appDB.auditLog[appDB.currentCompanyId] || [] : []
+            };
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `LUPPUS_meus_dados_${Date.now()}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showToast('Download dos seus dados iniciado.');
+        }
+
+        function requestAccountErasure() {
+            if(!confirm('Isso vai apagar permanentemente todos os lançamentos, planilhas e documentos desta conta. Não pode ser desfeito. Continuar?')) return;
+            if(!confirm('Tem certeza mesmo? Essa é a última confirmação antes da exclusão definitiva.')) return;
+            if(!cloudDB || !currentDocId) { showToast('Não foi possível identificar a conta para exclusão.'); return; }
+
+            cloudDB.collection("luppus_system").doc(currentDocId).delete()
+                .then(() => {
+                    const authApp = firebase.apps.find(a => a.name === AUTH_APP_NAME);
+                    const user = authApp && authApp.auth().currentUser;
+                    if(user) {
+                        return user.delete().catch(() => {
+                            showToast('Dados excluídos. Não foi possível remover o login automaticamente — faça login novamente e exclua a conta em Configurações se necessário, ou fale com o suporte.');
+                        });
+                    }
+                })
+                .then(() => { showToast('Conta e dados excluídos.'); setTimeout(() => doLogout(), 1500); })
+                .catch(() => showToast('Falha ao excluir os dados. Tente novamente.'));
         }
 
         // --- SMART SEARCH (AI LITE) ---
@@ -1702,9 +1837,11 @@
             document.getElementById('forecast-30').style.color = projectedEnd >= 0 ? 'var(--success)' : 'var(--danger)';
 
             const riskEl = document.getElementById('forecast-risk');
-            if(projectedEnd < 0) { riskEl.innerText = 'CRÍTICO'; riskEl.style.color = 'var(--danger)'; }
+            const isCritical = projectedEnd < 0;
+            if(isCritical) { riskEl.innerText = 'CRÍTICO'; riskEl.style.color = 'var(--danger)'; }
             else if(projectedEnd < (currentCash/2)) { riskEl.innerText = 'MÉDIO'; riskEl.style.color = 'var(--gold)'; }
             else { riskEl.innerText = 'BAIXO'; riskEl.style.color = 'var(--success)'; }
+            checkForecastNotifications(isCritical, projectedEnd);
 
             const thresholdRaw = document.getElementById('forecast-threshold').value;
             const threshold = thresholdRaw === '' ? null : parseFloat(thresholdRaw);
@@ -2260,22 +2397,29 @@
             });
             if(isDuplicate && !confirm("Já existe um lançamento com a mesma data, valor e descrição. Lançar mesmo assim?")) return;
 
+            const approvalThreshold = parseFloat((appDB.approvalThreshold && appDB.approvalThreshold[appDB.currentCompanyId]) || '');
+            const isHighValue = !isNaN(approvalThreshold) && amount >= approvalThreshold;
+            if(isHighValue && !confirm(`Este lançamento (R$ ${amount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}) está acima do limite de aprovação definido (R$ ${approvalThreshold.toLocaleString('pt-BR', {minimumFractionDigits: 2})}). Confirma o valor antes de lançar?`)) return;
+
             const finish = (receiptObj) => {
                 if (!appDB.transactions[appDB.currentCompanyId]) appDB.transactions[appDB.currentCompanyId] = [];
                 const txArray = appDB.transactions[appDB.currentCompanyId];
                 const wasEditing = editingTransactionIndex !== null;
+
+                const notifyPrefs = (appDB.notificationPrefs && appDB.notificationPrefs[appDB.currentCompanyId]) || {};
+                const highValueSuffix = (isHighValue && notifyPrefs.highValueEntry) ? ` ⚠ valor acima do limite de aprovação.` : '';
 
                 if(wasEditing) {
                     const existing = txArray[editingTransactionIndex];
                     const updated = { date: dateVal, desc, type, amount, category, recurring: existing.recurring, receipt: receiptObj || existing.receipt };
                     txArray[editingTransactionIndex] = updated;
                     logAudit('transaction', 'edit', desc, existing, updated);
-                    showToast(receiptObj || existing.receipt ? "Lançamento atualizado." : "Lançamento atualizado — ainda pendente.");
+                    showToast((receiptObj || existing.receipt ? "Lançamento atualizado." : "Lançamento atualizado — ainda pendente.") + highValueSuffix);
                 } else {
                     const created = { date: dateVal, desc, type, amount, category, recurring: recurring || false, receipt: receiptObj || null };
                     txArray.push(created);
                     logAudit('transaction', 'create', desc, null, created);
-                    showToast(receiptObj ? "Lançamento registrado." : "Lançamento registrado como pendente — anexe o comprovante depois.");
+                    showToast((receiptObj ? "Lançamento registrado." : "Lançamento registrado como pendente — anexe o comprovante depois.") + highValueSuffix);
                     if(recurring) generateRecurringOccurrences(dateVal, desc, type, amount, category);
                 }
 

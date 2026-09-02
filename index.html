@@ -23,7 +23,7 @@
     <title>LUPPUS | find the signal</title>
 
     <!-- CSS carrega primeiro para a tela de login aparecer estilizada o quanto antes -->
-    <link rel="stylesheet" href="style.css?v=20260902-8">
+    <link rel="stylesheet" href="style.css?v=20260902-9">
     <link rel="stylesheet" href="https://bossanova.uk/jspreadsheet/v4/jexcel.css" type="text/css" />
     <link rel="stylesheet" href="https://jsuites.net/v4/jsuites.css" type="text/css" />
 
@@ -708,11 +708,16 @@
                                 </div>
                                 <div class="settings-row">
                                     <div class="settings-row-label">meus dados<small>Baixe uma cópia de tudo o que está registrado na sua conta.</small></div>
-                                    <div class="settings-row-control"><button class="outline-btn" disabled>baixar (json)</button></div>
+                                    <div class="settings-row-control"><button class="outline-btn" onclick="downloadMyDataJSON()">baixar (json)</button></div>
                                 </div>
                             </div>
-                            <button class="outline-btn" style="margin-top: 20px;" disabled>salvar alterações</button>
-                            <p class="support-note">Ainda não conectado — vinculado à sua conta quando o login por usuário estiver pronto.</p>
+                            <p class="support-note">Nome, formato de data e moeda ainda são campos ilustrativos (visual pronto, aguardando decisão de produto sobre onde guardar preferência pessoal). E-mail de contato e exportação/exclusão de dados abaixo já são reais.</p>
+                        </div>
+
+                        <div class="panel-card" style="border-color: #331111;">
+                            <div class="panel-title" style="color: var(--danger);">excluir minha conta</div>
+                            <p class="support-note" style="margin-top: 0; margin-bottom: 16px;">Remove permanentemente todos os lançamentos, planilhas e documentos desta conta, e encerra a sessão. Não pode ser desfeito — baixe seus dados antes, se precisar.</p>
+                            <button class="danger-btn" onclick="requestAccountErasure()">excluir minha conta e todos os dados</button>
                         </div>
 
                         <div class="panel-card">
@@ -804,22 +809,22 @@
                             <div class="settings-list">
                                 <div class="settings-row">
                                     <div class="settings-row-label">risco de caixa crítico<small>Avisar quando o motor de previsibilidade indicar risco crítico.</small></div>
-                                    <div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" disabled><span class="toggle-slider"></span></label></div>
+                                    <div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" id="notify-risk-critical" onchange="saveNotificationPrefs()"><span class="toggle-slider"></span></label></div>
                                 </div>
                                 <div class="settings-row">
                                     <div class="settings-row-label">saldo projetado abaixo de<small>Avisar quando a projeção de 30 dias ficar menor que este valor.</small></div>
-                                    <div class="settings-row-control"><input type="number" placeholder="0,00" disabled></div>
+                                    <div class="settings-row-control"><input type="number" id="notify-balance-threshold" placeholder="0,00" onchange="saveNotificationPrefs()"></div>
                                 </div>
                                 <div class="settings-row">
-                                    <div class="settings-row-label">novo lançamento registrado</div>
-                                    <div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" disabled><span class="toggle-slider"></span></label></div>
+                                    <div class="settings-row-label">lançamento de alto valor<small>Avisar quando um lançamento acima do limite de aprovação (aba empresa) for registrado.</small></div>
+                                    <div class="settings-row-control"><label class="toggle-switch"><input type="checkbox" id="notify-high-value-entry" onchange="saveNotificationPrefs()"><span class="toggle-slider"></span></label></div>
                                 </div>
                                 <div class="settings-row">
                                     <div class="settings-row-label">relatório semanal por e-mail<small>Envio automático ainda não agendado — use o botão ao lado para testar o envio agora.</small></div>
                                     <div class="settings-row-control"><button type="button" class="outline-btn" onclick="sendTestReport()">enviar teste agora</button></div>
                                 </div>
                             </div>
-                            <p class="support-note">Envio por e-mail já é real (via Resend) — usa o e-mail de contato da aba "cliente" logo acima. Envio agendado automaticamente e notificação por WhatsApp ainda dependem de configuração adicional.</p>
+                            <p class="support-note">Os três primeiros alertas aparecem como aviso na tela (toast) no momento em que a condição acontece — ainda não são notificação push nem e-mail. Envio de relatório por e-mail já é real (via Resend) — usa o e-mail de contato acima.</p>
                         </div>
                     </div>
                 </div>
@@ -853,44 +858,33 @@
 
                         <div class="panel-card">
                             <div class="panel-title">gestão de usuários e permissões</div>
-                            <ul class="recent-list" style="margin-bottom: 20px;">
-                                <li class="recent-item">
-                                    <div><strong style="color: var(--text-main);">Ana Beatriz</strong> <span style="color:var(--text-muted); font-size:11px;">ana@clientevetta.com</span></div>
-                                    <div style="display:flex; align-items:center; gap:12px;"><span class="chip">cliente</span> <button class="icon-btn" disabled aria-label="remover pessoa"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button></div>
-                                </li>
-                                <li class="recent-item">
-                                    <div><strong style="color: var(--text-main);">Carlos Souza</strong> <span style="color:var(--text-muted); font-size:11px;">carlos@luppus.com</span></div>
-                                    <div style="display:flex; align-items:center; gap:12px;"><span class="chip">dev</span> <button class="icon-btn" disabled aria-label="remover pessoa"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button></div>
-                                </li>
-                                <li class="recent-item">
-                                    <div><strong style="color: var(--text-main);">Você</strong> <span style="color:var(--text-muted); font-size:11px;">dono da conta</span></div>
-                                    <div><span class="chip">empresa</span></div>
-                                </li>
-                            </ul>
                             <div class="form-row">
                                 <input type="text" placeholder="E-mail da pessoa" disabled>
                                 <select disabled><option>papel: cliente</option><option>papel: empresa</option><option>papel: dev</option></select>
                             </div>
                             <button class="outline-btn" style="margin-top: 15px;" disabled>convidar pessoa</button>
-                            <p class="support-note">A separação por papéis (cliente / empresa / dev) ainda não é aplicada de verdade — essa tela já existe pronta para quando a autenticação estiver funcionando.</p>
+                            <p class="support-note">A separação por papéis (cliente / empresa / dev) já é real e aplicada em toda a tela — cada papel só enxerga o que pode. O que ainda falta é convidar/remover pessoas por aqui: hoje o papel de cada conta é decidido por qual aba de login foi usada, não gerenciado nesta tela. Isso exige um backend com privilégios administrativos.</p>
                         </div>
 
                         <div class="panel-card">
-                            <div class="panel-title">histórico de alterações dos clientes</div>
-                            <p class="support-note" style="margin-top: 0; margin-bottom: 18px;">Últimas mudanças feitas pelos clientes nos últimos 7 dias.</p>
-                            <div class="table-container">
-                                <table>
-                                    <thead><tr><th>data</th><th>cliente</th><th>alteração</th></tr></thead>
-                                    <tbody>
-                                        <tr><td>21/08/2026 14:32</td><td>Cliente Aurora</td><td>Editou o lançamento "Pagamento Consultoria"</td></tr>
-                                        <tr><td>20/08/2026 09:15</td><td>Cliente Vetta</td><td>Cadastrou uma nova categoria: "Infraestrutura"</td></tr>
-                                        <tr><td>19/08/2026 17:48</td><td>Cliente Aurora</td><td>Excluiu um lançamento de custo</td></tr>
-                                        <tr><td>18/08/2026 11:02</td><td>Cliente Nortis</td><td>Atualizou o e-mail de contato</td></tr>
-                                        <tr><td>16/08/2026 08:27</td><td>Cliente Vetta</td><td>Importou extrato bancário (OFX)</td></tr>
-                                    </tbody>
-                                </table>
+                            <div class="panel-title">limite de aprovação</div>
+                            <p class="support-note" style="margin-top: 0; margin-bottom: 16px;">Lançamentos acima deste valor pedem uma confirmação extra antes de salvar — reduz o risco de erro de digitação ou lançamento indevido em valores altos, mesmo sem duas pessoas diferentes aprovando.</p>
+                            <div class="settings-row">
+                                <div class="settings-row-label">valor de alerta (R$)</div>
+                                <div class="settings-row-control"><input type="number" id="approval-threshold-input" placeholder="ex: 5000" onchange="saveApprovalThreshold()"></div>
                             </div>
-                            <p class="support-note">Exemplo ilustrativo — o registro de alterações reais depende do back-end.</p>
+                        </div>
+
+                        <div class="panel-card">
+                            <div class="panel-title">revisão periódica de acesso</div>
+                            <p id="access-review-note" class="support-note" style="margin-top: 0; margin-bottom: 16px;"></p>
+                            <button class="outline-btn" onclick="markAccessReviewed()">marcar como revisado hoje</button>
+                        </div>
+
+                        <div class="panel-card">
+                            <div class="panel-title">trilha de auditoria</div>
+                            <p class="support-note" style="margin-top: 0; margin-bottom: 18px;">Últimas alterações reais registradas nesta conta (lançamentos, categorias, documentos do cofre).</p>
+                            <div id="settings-audit-log-body" class="table-container"></div>
                         </div>
                     </div>
                 </div>
@@ -1345,7 +1339,7 @@
         </div>
     </div>
 
-    <script src="app.js?v=20260902-8" defer></script>
+    <script src="app.js?v=20260902-9" defer></script>
 
     <!--Start of Tawk.to Script-->
     <script type="text/javascript">
