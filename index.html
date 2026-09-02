@@ -23,7 +23,7 @@
     <title>LUPPUS | find the signal</title>
 
     <!-- CSS carrega primeiro para a tela de login aparecer estilizada o quanto antes -->
-    <link rel="stylesheet" href="style.css?v=20260902-9">
+    <link rel="stylesheet" href="style.css?v=20260902-10">
     <link rel="stylesheet" href="https://bossanova.uk/jspreadsheet/v4/jexcel.css" type="text/css" />
     <link rel="stylesheet" href="https://jsuites.net/v4/jsuites.css" type="text/css" />
 
@@ -1115,6 +1115,7 @@
 
                 <div class="panel-card">
                     <div class="panel-title">perguntas frequentes por área</div>
+                    <input type="text" id="faq-search" placeholder="Buscar nesta área..." style="margin-bottom: 16px;" oninput="filterFaqItems()">
                     <div class="faq-tabs">
                         <button type="button" class="faq-tab active" data-tab="lancamentos" onclick="switchFaqTab('lancamentos')">lançamentos</button>
                         <button type="button" class="faq-tab" data-tab="auditoria" onclick="switchFaqTab('auditoria')">auditoria</button>
@@ -1331,7 +1332,48 @@
                                 <button class="action-btn" type="button" style="width: 100%;" onclick="openSupportChat()">abrir chat ao vivo</button>
                             </div>
                         </div>
-                        <p class="support-note">Chat ao vivo real — normalmente respondido em minutos durante o horário comercial.</p>
+                        <p class="support-note">Chat ao vivo real — normalmente respondido em minutos durante o horário comercial. Se o chat não abrir ou ficar sem resposta, use o e-mail ou telefone ao lado — respondemos por lá em até 1 dia útil.</p>
+                    </div>
+                </div>
+
+                <div class="dashboard-lower-grid" style="margin-top: 20px;">
+                    <div class="panel-card">
+                        <div class="panel-title">status do sistema</div>
+                        <div class="settings-list">
+                            <div class="settings-row">
+                                <div class="settings-row-label">conexão com o banco de dados</div>
+                                <div class="settings-row-control"><span class="chip" id="support-status-chip">verificando...</span></div>
+                            </div>
+                        </div>
+                        <p class="support-note" id="support-status-note">Se algo parecer travado ou um erro de "acesso negado" aparecer do nada, confira aqui antes de achar que é um problema com a sua conta — pode ser uma instabilidade passageira de conexão.</p>
+                    </div>
+
+                    <div class="panel-card">
+                        <div class="panel-title">relatar um problema</div>
+                        <p class="support-note" style="margin-top: 0; margin-bottom: 16px;">Quanto mais específico, mais rápido conseguimos resolver — descreva a tela e os passos, não só "deu erro".</p>
+                        <div class="form-group"><label for="ticket-severity">gravidade</label>
+                            <select id="ticket-severity">
+                                <option value="baixa">baixa — não atrapalha o uso</option>
+                                <option value="media" selected>média — atrapalha, mas tem contorno</option>
+                                <option value="alta">alta — impede de trabalhar</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label for="ticket-view">tela afetada</label>
+                            <select id="ticket-view">
+                                <option value="painel">painel</option>
+                                <option value="lancamentos">lançamentos</option>
+                                <option value="auditoria">auditoria</option>
+                                <option value="forecasting">forecasting</option>
+                                <option value="planilhas">planilhas</option>
+                                <option value="bi">data studio</option>
+                                <option value="cofre">cofre</option>
+                                <option value="config">configurações</option>
+                                <option value="outra">outra / não sei</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label for="ticket-desc">o que aconteceu (passo a passo, se possível)</label><textarea id="ticket-desc" rows="3" placeholder="Ex: cliquei em X, preenchi Y, ao salvar apareceu Z"></textarea></div>
+                        <button class="action-btn" style="width: 100%;" onclick="submitSupportTicket()">enviar relato</button>
+                        <div id="support-ticket-history" style="margin-top: 18px;"></div>
                     </div>
                 </div>
             </div>
@@ -1339,7 +1381,7 @@
         </div>
     </div>
 
-    <script src="app.js?v=20260902-9" defer></script>
+    <script src="app.js?v=20260902-10" defer></script>
 
     <!--Start of Tawk.to Script-->
     <script type="text/javascript">

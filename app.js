@@ -899,6 +899,7 @@
             if(viewId === 'planilhas') initSpreadsheet();
             if(viewId === 'projecao') updateForecasting();
             if(viewId === 'config') loadConfigSettingsUI();
+            if(viewId === 'suporte') { injectFaqFeedbackButtons(); updateSupportStatus(); renderSupportTicketHistory(); }
 
             const navToggle = document.getElementById('nav-toggle');
             if(navToggle) navToggle.checked = false;
@@ -912,6 +913,64 @@
             document.querySelectorAll('.faq-tab-panel').forEach(el => el.classList.remove('active'));
             const activePanel = document.getElementById('faq-tab-' + tab);
             if(activePanel) activePanel.classList.add('active');
+            filterFaqItems();
+        }
+
+        function filterFaqItems() {
+            const searchEl = document.getElementById('faq-search');
+            const query = searchEl ? searchEl.value.trim().toLowerCase() : '';
+            const activePanel = document.querySelector('.faq-tab-panel.active');
+            if(!activePanel) return;
+            let matchCount = 0;
+            activePanel.querySelectorAll('.faq-item').forEach(item => {
+                const matches = !query || item.textContent.toLowerCase().includes(query);
+                item.style.display = matches ? '' : 'none';
+                if(matches) matchCount++;
+            });
+            let emptyNote = activePanel.querySelector('.faq-empty-note');
+            if(matchCount === 0 && query) {
+                if(!emptyNote) {
+                    emptyNote = document.createElement('p');
+                    emptyNote.className = 'empty-state faq-empty-note';
+                    emptyNote.textContent = 'Nada encontrado nesta área para essa busca — tente outra aba ou fale com a gente ao final da página.';
+                    activePanel.querySelector('.faq-list').appendChild(emptyNote);
+                }
+            } else if(emptyNote) {
+                emptyNote.remove();
+            }
+        }
+
+        function faqItemKey(item) {
+            const summary = item.querySelector('summary');
+            return summary ? summary.textContent.trim() : '';
+        }
+
+        function injectFaqFeedbackButtons() {
+            document.querySelectorAll('.faq-item').forEach(item => {
+                if(item.querySelector('.faq-feedback-row')) return;
+                const key = faqItemKey(item);
+                if(!key) return;
+                const row = document.createElement('div');
+                row.className = 'faq-feedback-row';
+                row.style.cssText = 'margin-top:10px; display:flex; align-items:center; gap:10px; font-size:11px; color:var(--text-muted);';
+                row.innerHTML = `<span>Isso ajudou?</span>
+                    <button type="button" class="outline-btn" style="padding:3px 10px; font-size:10px;" onclick="rateFaqItem(this, true)">sim</button>
+                    <button type="button" class="outline-btn" style="padding:3px 10px; font-size:10px;" onclick="rateFaqItem(this, false)">não</button>
+                    <span class="faq-feedback-thanks" style="display:none;">valeu pelo retorno!</span>`;
+                row.dataset.faqKey = key;
+                item.appendChild(row);
+            });
+        }
+
+        function rateFaqItem(btn, helpful) {
+            const row = btn.closest('.faq-feedback-row');
+            const key = row.dataset.faqKey;
+            if(!appDB.faqFeedback) appDB.faqFeedback = {};
+            if(!appDB.faqFeedback[key]) appDB.faqFeedback[key] = { yes: 0, no: 0 };
+            appDB.faqFeedback[key][helpful ? 'yes' : 'no']++;
+            saveToCloud();
+            row.querySelectorAll('button').forEach(b => b.disabled = true);
+            row.querySelector('.faq-feedback-thanks').style.display = 'inline';
         }
 
         const MAILER_URL = 'https://luppus-mailer.luppus.workers.dev';
@@ -955,6 +1014,52 @@
             } else {
                 showToast('Chat carregando... tente novamente em instantes.');
             }
+        }
+
+        function updateSupportStatus() {
+            const chip = document.getElementById('support-status-chip');
+            const note = document.getElementById('support-status-note');
+            if(!chip) return;
+            if(cloudDB) {
+                chip.textContent = '● operacional';
+                chip.className = 'chip chip-success';
+                if(note) note.textContent = 'Conectado normalmente. Se algo parecer travado mesmo assim, tente recarregar a página antes de reportar.';
+            } else {
+                chip.textContent = '● modo demonstração';
+                chip.className = 'chip';
+                if(note) note.textContent = 'Você está no modo de demonstração — sem conexão real com o banco de dados. Isso é esperado, não é uma falha.';
+            }
+        }
+
+        function submitSupportTicket() {
+            const severity = document.getElementById('ticket-severity').value;
+            const view = document.getElementById('ticket-view').value;
+            const desc = document.getElementById('ticket-desc').value.trim();
+            if(!desc) { showToast('Descreva o que aconteceu antes de enviar.'); return; }
+
+            if(!appDB.supportTickets) appDB.supportTickets = {};
+            if(!appDB.supportTickets[appDB.currentCompanyId]) appDB.supportTickets[appDB.currentCompanyId] = [];
+            appDB.supportTickets[appDB.currentCompanyId].push({
+                ts: new Date().toISOString(), user: getCurrentUserLabel(), severity, view, desc, status: 'aberto'
+            });
+            saveToCloud();
+            document.getElementById('ticket-desc').value = '';
+            renderSupportTicketHistory();
+            showToast('Relato enviado. Obrigado — vamos olhar assim que possível.');
+        }
+
+        function renderSupportTicketHistory() {
+            const container = document.getElementById('support-ticket-history');
+            if(!container) return;
+            const tickets = (appDB.supportTickets && appDB.supportTickets[appDB.currentCompanyId]) || [];
+            if(tickets.length === 0) { container.innerHTML = ''; return; }
+            const severityColor = { alta: 'var(--danger)', media: 'var(--gold)', baixa: 'var(--text-muted)' };
+            const rows = tickets.slice().reverse().slice(0, 10).map(t => {
+                const when = new Date(t.ts);
+                const whenLabel = isNaN(when.getTime()) ? t.ts : when.toLocaleString('pt-BR');
+                return `<div class="aging-row"><span><span class="chip" style="color:${severityColor[t.severity] || 'var(--text-muted)'};">${escapeHtml(t.severity)}</span> ${escapeHtml(t.view)}: ${escapeHtml(t.desc.substring(0, 60))}${t.desc.length > 60 ? '…' : ''}</span><span style="color:var(--text-muted); font-size:10px;">${whenLabel}</span></div>`;
+            }).join('');
+            container.innerHTML = `<h3 class="subsection-title" style="margin-top:0;">seus relatos recentes</h3>` + rows;
         }
 
         function switchConfigTab(tab) {

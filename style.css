@@ -338,8 +338,8 @@
         .form-group { margin-bottom: 20px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         label { display: block; margin-bottom: 8px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
-        input[type="text"], input[type="number"], select { width: 100%; padding: 14px; background-color: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); border-radius: var(--radius-sm); font-family: 'Inter', sans-serif; font-size: 13px; transition: 0.3s;}
-        input:focus, select:focus { outline: none; border-color: var(--gold); }
+        input[type="text"], input[type="number"], select, textarea { width: 100%; padding: 14px; background-color: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); border-radius: var(--radius-sm); font-family: 'Inter', sans-serif; font-size: 13px; transition: 0.3s; resize: vertical; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--gold); }
         input:disabled, select:disabled, button:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
         
         input[type="file"] { width: 100%; padding: 10px; background-color: var(--bg-main); border: 1px dashed #444; color: var(--text-muted); border-radius: var(--radius); font-size: 12px; cursor: pointer; }
