@@ -1306,7 +1306,7 @@
 
         // --- RENDER TABLE & CHART ---
         function renderData(dataToRender) {
-            let totalIn = 0, totalOut = 0;
+            let totalIn = 0, totalOut = 0, pendingSum = 0;
             const tbody = document.querySelector('#history-table tbody');
             const recentList = document.getElementById('recent-transactions-list');
 
@@ -1318,6 +1318,8 @@
                 if(!isPending) {
                     if(t.type === 'in') totalIn += t.amount;
                     if(t.type === 'out') totalOut += t.amount;
+                } else {
+                    pendingSum += (t.type === 'in' ? t.amount : -t.amount);
                 }
 
                 let attachmentHtml = '<span style="color: var(--text-muted);">-</span>';
@@ -1370,11 +1372,85 @@
                 elNet.innerText = `R$ ${(totalIn - totalOut).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
                 elNet.style.color = (totalIn - totalOut) >= 0 ? 'var(--success)' : 'var(--danger)';
             }
+            const elNetSub = document.getElementById('net-cash-subtitle');
+            if(elNetSub) {
+                elNetSub.textContent = pendingSum !== 0 ? `confirmado — R$ ${Math.abs(pendingSum).toLocaleString('pt-BR',{minimumFractionDigits:2})} ${pendingSum >= 0 ? 'a receber' : 'a pagar'} ainda pendente` : 'todos os lançamentos já confirmados';
+            }
             updateChart(totalIn, totalOut);
             if(document.getElementById('view-projecao').classList.contains('active')) updateForecasting();
             updatePainelAlerts();
             updatePainelCategoryChart();
             updatePainelForecastSummary();
+            updatePainelRunway();
+            updatePainelInsight(totalIn, totalOut);
+        }
+
+        function goToAuditFilteredByType(type) {
+            switchView('relatorios');
+            if(type === 'in') setAuditQuickFilter('receitas');
+            else if(type === 'out') setAuditQuickFilter('custos');
+            else clearAuditFilters();
+        }
+
+        function updatePainelRunway() {
+            const el = document.getElementById('painel-runway');
+            if(!el) return;
+            const currentTx = (appDB.transactions[appDB.currentCompanyId] || []).filter(t => t.receipt);
+            if(currentTx.length === 0) { el.textContent = '--'; el.style.color = ''; return; }
+            let totalIn = 0, totalOut = 0, oldestDate = null;
+            currentTx.forEach(t => {
+                if(t.type === 'in') totalIn += t.amount; else totalOut += t.amount;
+                const d = parseBRDate(t.date);
+                if(d && (!oldestDate || d < oldestDate)) oldestDate = d;
+            });
+            const currentCash = totalIn - totalOut;
+            const today = new Date(); today.setHours(0,0,0,0);
+            const daysCovered = oldestDate ? Math.max(1, Math.round((today - oldestDate) / 86400000)) : 1;
+            const dailyNet = (totalIn - totalOut) / daysCovered;
+            if(dailyNet >= 0) { el.textContent = 'sem queima'; el.style.color = 'var(--success)'; return; }
+            if(currentCash <= 0) { el.textContent = '0 meses'; el.style.color = 'var(--danger)'; return; }
+            const monthlyBurn = Math.abs(dailyNet) * 30;
+            const months = currentCash / monthlyBurn;
+            el.textContent = months >= 12 ? `${(months/12).toFixed(1)} anos` : `${months.toFixed(1)} meses`;
+            el.style.color = months < 3 ? 'var(--danger)' : (months < 6 ? 'var(--gold)' : 'var(--success)');
+        }
+
+        function updatePainelInsight(totalIn, totalOut) {
+            const el = document.getElementById('painel-insight');
+            if(!el) return;
+            const currentTx = (appDB.transactions[appDB.currentCompanyId] || []).filter(t => t.receipt && t.type === 'out');
+            if(currentTx.length === 0) { el.textContent = ''; return; }
+
+            const now = new Date();
+            const thisMonthKey = now.getFullYear() + '-' + now.getMonth();
+            const grouped = {};
+            currentTx.forEach(t => {
+                const cat = t.category || 'sem categoria';
+                if(!grouped[cat]) grouped[cat] = 0;
+                grouped[cat] += t.amount;
+            });
+            const topCat = Object.keys(grouped).sort((a,b) => grouped[b] - grouped[a])[0];
+            if(!topCat || totalOut === 0) { el.textContent = ''; return; }
+            const pct = (grouped[topCat] / totalOut) * 100;
+
+            const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const lastMonthKey = lastMonthDate.getFullYear() + '-' + lastMonthDate.getMonth();
+            let thisMonthCatTotal = 0, lastMonthCatTotal = 0;
+            currentTx.forEach(t => {
+                if((t.category || 'sem categoria') !== topCat) return;
+                const d = parseBRDate(t.date);
+                if(!d) return;
+                const key = d.getFullYear() + '-' + d.getMonth();
+                if(key === thisMonthKey) thisMonthCatTotal += t.amount;
+                else if(key === lastMonthKey) lastMonthCatTotal += t.amount;
+            });
+
+            let trendPhrase = '';
+            if(lastMonthCatTotal > 0) {
+                const change = ((thisMonthCatTotal - lastMonthCatTotal) / lastMonthCatTotal) * 100;
+                if(Math.abs(change) >= 5) trendPhrase = `, ${change >= 0 ? 'alta' : 'queda'} de ${Math.abs(change).toFixed(0)}% vs. o mês anterior`;
+            }
+            el.innerHTML = `<strong style="color: var(--text-main); font-style: normal;">${escapeHtml(topCat)}</strong> responde por ${pct.toFixed(0)}% dos seus custos confirmados${trendPhrase}.`;
         }
 
         function updateChart(totalIn, totalOut) {
@@ -1416,8 +1492,25 @@
                 if(diffDays <= 30) expiringCount++;
             });
 
+            let outlierCount = 0;
+            const byCategory = {};
+            currentTx.filter(t => t.receipt).forEach(t => {
+                const cat = t.category || '(sem categoria)';
+                if(!byCategory[cat]) byCategory[cat] = [];
+                byCategory[cat].push(t.amount);
+            });
+            Object.keys(byCategory).forEach(cat => {
+                const amounts = byCategory[cat];
+                if(amounts.length < 4) return;
+                const mean = amounts.reduce((a,b) => a+b, 0) / amounts.length;
+                const std = Math.sqrt(amounts.reduce((a,b) => a + Math.pow(b - mean, 2), 0) / amounts.length);
+                if(std === 0) return;
+                amounts.forEach(a => { if(Math.abs((a - mean) / std) >= 2.5) outlierCount++; });
+            });
+
             const pendingClass = pendingCount > 0 ? 'has-issues' : '';
             const expiringClass = expiringCount > 0 ? 'has-issues' : '';
+            const outlierClass = outlierCount > 0 ? 'has-issues' : '';
 
             container.innerHTML = `
                 <button type="button" class="painel-alert-item ${pendingClass}" onclick="goToPendingTransactions()">
@@ -1427,6 +1520,10 @@
                 <button type="button" class="painel-alert-item ${expiringClass}" onclick="switchView('cofre')">
                     <span class="painel-alert-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span>
                     <span class="painel-alert-text"><strong>${expiringCount} documento${expiringCount === 1 ? '' : 's'} vencendo</strong><span>${expiringCount > 0 ? 'nos próximos 30 dias' : 'nenhum vencimento próximo'}</span></span>
+                </button>
+                <button type="button" class="painel-alert-item ${outlierClass}" onclick="switchView('relatorios')">
+                    <span class="painel-alert-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></span>
+                    <span class="painel-alert-text"><strong>${outlierCount} lançamento${outlierCount === 1 ? '' : 's'} fora do padrão</strong><span>${outlierCount > 0 ? 'valor muito acima da média da categoria' : 'nada fora do padrão estatístico'}</span></span>
                 </button>
             `;
         }

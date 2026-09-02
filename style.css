@@ -213,6 +213,11 @@
         .kpi-value.positive { color: var(--success); }
         .kpi-value.negative { color: var(--danger); }
         .kpi-grid-4 .kpi-value { font-size: 27px; }
+        button.kpi-card { font: inherit; text-align: left; width: 100%; }
+        .kpi-card-clickable { cursor: pointer; transition: border-color 0.15s ease, transform 0.15s ease; }
+        .kpi-card-clickable:hover { border-color: var(--gold); transform: translateY(-1px); }
+        .kpi-card-clickable:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+        .kpi-subtitle { font-size: 10.5px; color: var(--text-muted); font-weight: 400; }
 
         .dashboard-lower-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 20px; }
         @media (max-width: 1100px) { .dashboard-lower-grid { grid-template-columns: 1fr; } }

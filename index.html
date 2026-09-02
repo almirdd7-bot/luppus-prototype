@@ -23,7 +23,7 @@
     <title>LUPPUS | find the signal</title>
 
     <!-- CSS carrega primeiro para a tela de login aparecer estilizada o quanto antes -->
-    <link rel="stylesheet" href="style.css?v=20260902-2">
+    <link rel="stylesheet" href="style.css?v=20260902-3">
     <link rel="stylesheet" href="https://bossanova.uk/jspreadsheet/v4/jexcel.css" type="text/css" />
     <link rel="stylesheet" href="https://jsuites.net/v4/jsuites.css" type="text/css" />
 
@@ -286,11 +286,13 @@
             <!-- VIEW 1: PAINEL -->
             <div id="view-painel" class="view-section active">
                 <div class="kpi-grid kpi-grid-4">
-                    <div class="kpi-card"><div class="kpi-title">receita</div><div class="kpi-value positive" id="total-in">R$ 0,00</div></div>
-                    <div class="kpi-card"><div class="kpi-title">custos</div><div class="kpi-value negative" id="total-out">R$ 0,00</div></div>
-                    <div class="kpi-card"><div class="kpi-title">resultado líquido</div><div class="kpi-value" id="net-cash">R$ 0,00</div></div>
+                    <button type="button" class="kpi-card kpi-card-clickable" onclick="goToAuditFilteredByType('in')"><div class="kpi-title">receita</div><div class="kpi-value positive" id="total-in">R$ 0,00</div></button>
+                    <button type="button" class="kpi-card kpi-card-clickable" onclick="goToAuditFilteredByType('out')"><div class="kpi-title">custos</div><div class="kpi-value negative" id="total-out">R$ 0,00</div></button>
+                    <button type="button" class="kpi-card kpi-card-clickable" onclick="goToAuditFilteredByType('all')"><div class="kpi-title">resultado líquido</div><div class="kpi-value" id="net-cash">R$ 0,00</div><div class="kpi-subtitle" id="net-cash-subtitle"></div></button>
                     <div class="kpi-card"><div class="kpi-title">saldo projetado (30d)</div><div class="kpi-value" id="painel-forecast-30">R$ 0,00</div></div>
+                    <div class="kpi-card"><div class="kpi-title">fôlego de caixa</div><div class="kpi-value" id="painel-runway">--</div></div>
                 </div>
+                <p id="painel-insight" class="support-note hide-on-pdf" style="margin: 0 0 20px; font-size: 12px;"></p>
                 <div class="painel-alerts-grid hide-on-pdf" id="painel-alerts-grid" style="margin-bottom: 20px;"></div>
                 <div class="panel-card" id="quotes-panel-card" style="margin-bottom: 20px;">
                     <div class="panel-title">cotações do dia</div>
@@ -1281,7 +1283,7 @@
         </div>
     </div>
 
-    <script src="app.js?v=20260902-2" defer></script>
+    <script src="app.js?v=20260902-3" defer></script>
 
     <!--Start of Tawk.to Script-->
     <script type="text/javascript">
