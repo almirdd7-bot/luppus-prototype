@@ -68,6 +68,7 @@
         let biData = [];
         let biHeaders = [];
         let spreadsheetUndoStash = {};
+        let spreadsheetHistory = {}; // { sheetId: [{data, savedAt, savedBy}, ...] } — últimas 5 versões salvas
 
         function cssVar(name) {
             return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -2320,7 +2321,7 @@
         // --- MÓDULOS BI E PLANILHAS ---
         const DEFAULT_SHEET_DATA = [['Item', 'Qtd', 'Status'],['', '', ''],['', '', '']];
         const SHEET_TEMPLATES = {
-            estoque: [['Item', 'Quantidade', 'Estoque Mínimo', 'Status'],['', '', '', '']],
+            estoque: [['Item', 'Quantidade', 'Valor Unitário', 'Estoque Mínimo', 'Status'],['', '', '', '', '']],
             pagamentos: [['Fornecedor', 'Vencimento', 'Valor', 'Pago?'],['', '', '', '']],
             recebimentos: [['Cliente', 'Vencimento', 'Valor', 'Recebido?'],['', '', '', '']],
             fornecedores: [['Fornecedor', 'Contato', 'Categoria', 'Aprovado?'],['', '', '', '']],
@@ -2329,7 +2330,8 @@
             reembolsos: [['Colaborador', 'Data', 'Categoria', 'Valor', 'Aprovado?'],['', '', '', '', '']],
             compliance: [['Documento', 'Responsável', 'Prazo', 'Concluído?'],['', '', '', '']],
             ativos: [['Ativo', 'Categoria', 'Data de Aquisição', 'Valor', 'Status'],['', '', '', '', '']],
-            onboarding: [['Cliente', 'Etapa', 'Responsável', 'Concluído?'],['', '', '', '']]
+            onboarding: [['Cliente', 'Etapa', 'Responsável', 'Concluído?'],['', '', '', '']],
+            processo: [['Etapa', 'Responsável', 'Tempo de Execução (min)', 'Tempo de Espera (min)', 'Observações'],['', '', '', '', '']]
         };
 
         function getSheets() {
@@ -2390,7 +2392,36 @@
             const el = document.getElementById('sheet-meta');
             if(!el) return;
             const sheet = getActiveSheet();
-            el.textContent = sheet.name + (sheet.savedAt ? ` · salvo em ${sheet.savedAt}` : ' · ainda não salvo');
+            const byWhom = sheet.savedBy ? ` por ${sheet.savedBy}` : '';
+            el.textContent = sheet.name + (sheet.savedAt ? ` · salvo em ${sheet.savedAt}${byWhom}` : ' · ainda não salvo');
+            renderSheetHistory();
+            renderSheetABCXYZ();
+        }
+
+        function renderSheetHistory() {
+            const container = document.getElementById('sheet-history');
+            const listEl = document.getElementById('sheet-history-list');
+            if(!container || !listEl) return;
+            const sheet = getActiveSheet();
+            const history = spreadsheetHistory[sheet.id] || [];
+            if(history.length === 0) { container.style.display = 'none'; return; }
+            container.style.display = 'block';
+            listEl.innerHTML = history.slice().reverse().map((snap, revIdx) => {
+                const idx = history.length - 1 - revIdx;
+                return `<div class="variance-row"><span>${escapeHtml(snap.savedAt)}${snap.savedBy ? ' · ' + escapeHtml(snap.savedBy) : ''}</span><button type="button" class="outline-btn" style="padding:4px 10px; font-size:10px;" onclick="restoreSheetVersion(${idx})">restaurar</button></div>`;
+            }).join('');
+        }
+
+        function restoreSheetVersion(idx) {
+            const sheet = getActiveSheet();
+            const history = spreadsheetHistory[sheet.id] || [];
+            const snap = history[idx];
+            if(!snap) return;
+            if(!confirm(`Restaurar a versão salva em ${snap.savedAt}? A versão atual não salva será perdida.`)) return;
+            sheet.data = snap.data.map(row => row.slice());
+            initSpreadsheet();
+            saveToCloud();
+            showToast('Versão restaurada.');
         }
 
         function switchSheet(id) {
@@ -2441,6 +2472,7 @@
             const data = tpl.map(r => r.slice());
             for(let i = 0; i < 8; i++) data.push(new Array(tpl[0].length).fill(''));
             sheet.data = data;
+            sheet.templateKey = key;
             initSpreadsheet();
             showToast('Modelo aplicado.');
         }
@@ -2483,14 +2515,105 @@
             if(!mySpreadsheet) return;
             const sheet = getActiveSheet();
             spreadsheetUndoStash[sheet.id] = sheet.data.map(row => row.slice());
+
+            if(sheet.savedAt) {
+                if(!spreadsheetHistory[sheet.id]) spreadsheetHistory[sheet.id] = [];
+                spreadsheetHistory[sheet.id].push({ data: sheet.data.map(row => row.slice()), savedAt: sheet.savedAt, savedBy: sheet.savedBy || null });
+                if(spreadsheetHistory[sheet.id].length > 5) spreadsheetHistory[sheet.id].shift();
+            }
+
             sheet.data = mySpreadsheet.getData().map(row => row.slice());
             sheet.savedAt = getTodayDate() + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            sheet.savedBy = getCurrentUserLabel();
             saveToCloud();
             renderSheetMeta();
             showToast('Planilha salva.');
         }
 
         function exportSpreadsheet() { if(mySpreadsheet) mySpreadsheet.download(); }
+
+        function exportSheetAsChecklistPDF() {
+            if(!mySpreadsheet) { showToast('Nada para exportar.'); return; }
+            const data = mySpreadsheet.getData();
+            if(!data || data.length < 2) { showToast('Planilha vazia.'); return; }
+            const sheet = getActiveSheet();
+            const headers = data[0];
+            const rows = data.slice(1).filter(row => row.some(c => (c || '').toString().trim() !== ''));
+            if(rows.length === 0) { showToast('Nenhuma linha preenchida para exportar.'); return; }
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const marginX = 15; let y = 20;
+            pdf.setFontSize(16); pdf.text(String(sheet.name), marginX, y); y += 8;
+            pdf.setFontSize(9); pdf.setTextColor(120); pdf.text(`LUPPUS - gerado em ${getTodayDate()}`, marginX, y); y += 10;
+            pdf.setTextColor(20);
+
+            rows.forEach((row) => {
+                if(y > 275) { pdf.addPage(); y = 20; }
+                pdf.setFontSize(11);
+                pdf.rect(marginX, y - 4, 4, 4);
+                const lineText = headers.map((h, idx) => `${h}: ${row[idx] || '-'}`).join('  |  ');
+                const wrapped = pdf.splitTextToSize(lineText, 170);
+                pdf.text(wrapped, marginX + 8, y);
+                y += (wrapped.length * 5) + 4;
+            });
+
+            pdf.save(`LUPPUS_checklist_${String(sheet.name).replace(/\s+/g, '_')}_${Date.now()}.pdf`);
+            showToast('Checklist exportado.');
+        }
+
+        function importPendingTransactionsToSheet() {
+            if(!mySpreadsheet) return;
+            const pending = (appDB.transactions[appDB.currentCompanyId] || []).filter(t => !t.receipt);
+            if(pending.length === 0) { showToast('Nenhum lançamento pendente para importar.'); return; }
+            const data = mySpreadsheet.getData();
+            const colCount = (data[0] && data[0].length) || 4;
+            pending.forEach(t => {
+                const row = new Array(colCount).fill('');
+                row[0] = t.desc;
+                if(colCount > 1) row[1] = t.date;
+                if(colCount > 2) row[2] = t.amount.toFixed(2).replace('.', ',');
+                if(colCount > 3) row[3] = 'Não';
+                data.push(row);
+            });
+            getActiveSheet().data = data;
+            initSpreadsheet();
+            showToast(`${pending.length} pendência(s) importada(s).`);
+        }
+
+        function renderSheetABCXYZ() {
+            const card = document.getElementById('sheet-abcxyz-card');
+            const body = document.getElementById('sheet-abcxyz-body');
+            if(!card || !body) return;
+            const sheet = getActiveSheet();
+            if(sheet.templateKey !== 'estoque') { card.style.display = 'none'; return; }
+            const data = mySpreadsheet ? mySpreadsheet.getData() : sheet.data;
+            if(!data || data.length < 2) { card.style.display = 'none'; return; }
+
+            const parseNum = (v) => { const n = parseFloat(String(v || '').replace(/\./g, '').replace(',', '.')); return isNaN(n) ? 0 : n; };
+            const items = data.slice(1)
+                .map(row => ({ name: row[0], qty: parseNum(row[1]), unitValue: parseNum(row[2]), minStock: parseNum(row[3]) }))
+                .filter(it => it.name && it.name.toString().trim() !== '');
+
+            if(items.length === 0) { card.style.display = 'none'; return; }
+            card.style.display = 'block';
+
+            items.forEach(it => { it.value = it.qty * it.unitValue; });
+            const totalValue = items.reduce((a, b) => a + b.value, 0);
+            items.sort((a, b) => b.value - a.value);
+            let cum = 0;
+            items.forEach(it => {
+                cum += it.value;
+                const cumPct = totalValue > 0 ? (cum / totalValue) * 100 : 0;
+                it.abc = cumPct <= 80 ? 'A' : (cumPct <= 95 ? 'B' : 'C');
+                it.reorderPoint = it.minStock * 1.2;
+            });
+
+            body.innerHTML = items.map(it => {
+                const abcColor = it.abc === 'A' ? 'var(--danger)' : (it.abc === 'B' ? 'var(--gold)' : 'var(--text-muted)');
+                return `<div class="outlier-row"><span>${escapeHtml(String(it.name))} <span class="chip" style="background:${abcColor}; color:var(--obsidian); padding:2px 8px; font-size:9px;">${it.abc}</span></span><span style="color:var(--text-muted); font-size:11px;">valor: R$ ${it.value.toLocaleString('pt-BR', {minimumFractionDigits: 2})} · reposição sugerida: ${it.reorderPoint.toLocaleString('pt-BR')}</span></div>`;
+            }).join('');
+        }
         
         // Faz split respeitando campos entre aspas (que podem conter o próprio separador,
         // ex: "Fornecedor, Ltda") — um split ingênuo quebraria essas colunas.
