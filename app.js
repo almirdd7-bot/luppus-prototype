@@ -1329,13 +1329,16 @@
                 if(tbody) {
                     const tr = document.createElement('tr');
                     let actionHtml = '';
+                    let checkboxHtml = '';
                     if(!isClientMode) {
                         actionHtml = `<div style="display:flex; gap:6px;">
                             <button class="icon-btn" onclick="editTransaction(${t.originalIndex})" aria-label="editar lançamento"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
                             <button class="icon-btn" onclick="deleteTransaction(${t.originalIndex})" aria-label="excluir lançamento"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
                         </div>`;
+                        checkboxHtml = `<input type="checkbox" class="bulk-row-checkbox" ${bulkSelectedIndices.has(t.originalIndex) ? 'checked' : ''} onchange="toggleBulkRow(${t.originalIndex}, this.checked)" aria-label="selecionar lançamento">`;
                     }
                     tr.innerHTML = `
+                        <td class="hide-on-pdf hide-client">${checkboxHtml}</td>
                         <td style="color: var(--text-muted);">${t.date}</td>
                         <td>${escapeHtml(t.desc)}${categoryChip}${pendingChip}</td>
                         <td style="color: ${t.type === 'in' ? 'var(--success)' : 'var(--danger)'};">${t.type === 'in' ? 'receita' : 'custo'}</td>
@@ -1356,8 +1359,9 @@
 
             if(dataToRender.length === 0) {
                 if(recentList) recentList.innerHTML = '<li class="empty-state">Sem lançamentos ainda.</li>';
-                if(tbody) tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Nenhum lançamento registrado ainda.</td></tr>';
+                if(tbody) tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Nenhum lançamento registrado ainda.</td></tr>';
             }
+            updateBulkActionsBar();
 
             const elIn = document.getElementById('total-in'); const elOut = document.getElementById('total-out'); const elNet = document.getElementById('net-cash');
             if(elIn) elIn.innerText = `R$ ${totalIn.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
@@ -1836,6 +1840,13 @@
             if (!parseBRDate(dateVal)) { showToast("Data inválida. Use DD/MM/AAAA."); return; }
             if (file && file.type === 'application/pdf' && file.size > MAX_FILE_BYTES) { showToast("PDF acima de 500KB — reduza o tamanho do arquivo antes de anexar."); return; }
 
+            const existingTx = appDB.transactions[appDB.currentCompanyId] || [];
+            const isDuplicate = existingTx.some((t, i) => {
+                if(editingTransactionIndex !== null && i === editingTransactionIndex) return false;
+                return t.date === dateVal && t.amount === amount && t.desc.trim().toLowerCase() === desc.toLowerCase();
+            });
+            if(isDuplicate && !confirm("Já existe um lançamento com a mesma data, valor e descrição. Lançar mesmo assim?")) return;
+
             const finish = (receiptObj) => {
                 if (!appDB.transactions[appDB.currentCompanyId]) appDB.transactions[appDB.currentCompanyId] = [];
                 const txArray = appDB.transactions[appDB.currentCompanyId];
@@ -1919,9 +1930,85 @@
                 const removed = appDB.transactions[appDB.currentCompanyId][index];
                 appDB.transactions[appDB.currentCompanyId].splice(index, 1);
                 logAudit('transaction', 'delete', removed ? removed.desc : '(desconhecido)', removed, null);
+                bulkSelectedIndices.delete(index);
                 saveToCloud();
                 applySmartSearch();
             }
+        }
+
+        // --- SELEÇÃO E EDIÇÃO EM MASSA ---
+        let bulkSelectedIndices = new Set();
+
+        function toggleBulkRow(index, checked) {
+            if(checked) bulkSelectedIndices.add(index); else bulkSelectedIndices.delete(index);
+            updateBulkActionsBar();
+        }
+
+        function toggleBulkSelectAll(checked) {
+            document.querySelectorAll('#history-table tbody .bulk-row-checkbox').forEach(cb => {
+                cb.checked = checked;
+                cb.dispatchEvent(new Event('change'));
+            });
+        }
+
+        function clearBulkSelection() {
+            bulkSelectedIndices.clear();
+            document.querySelectorAll('#history-table tbody .bulk-row-checkbox').forEach(cb => cb.checked = false);
+            const selectAll = document.getElementById('bulk-select-all');
+            if(selectAll) selectAll.checked = false;
+            updateBulkActionsBar();
+        }
+
+        function updateBulkActionsBar() {
+            const bar = document.getElementById('bulk-actions-bar');
+            const countEl = document.getElementById('bulk-selected-count');
+            if(!bar) return;
+            if(bulkSelectedIndices.size === 0) { bar.style.display = 'none'; return; }
+            bar.style.display = 'flex';
+            countEl.textContent = `${bulkSelectedIndices.size} selecionado${bulkSelectedIndices.size === 1 ? '' : 's'}`;
+            const select = document.getElementById('bulk-category-select');
+            if(select) {
+                const currentValue = select.value;
+                select.innerHTML = getCategories().map(c => `<option${c === currentValue ? ' selected' : ''}>${escapeHtml(c)}</option>`).join('');
+            }
+        }
+
+        function applyBulkCategory() {
+            const select = document.getElementById('bulk-category-select');
+            const category = select ? select.value : '';
+            if(!category || bulkSelectedIndices.size === 0) return;
+            const txArray = appDB.transactions[appDB.currentCompanyId] || [];
+            let count = 0;
+            bulkSelectedIndices.forEach(idx => {
+                const t = txArray[idx];
+                if(!t) return;
+                const before = { ...t };
+                t.category = category;
+                logAudit('transaction', 'edit', t.desc, before, t);
+                count++;
+            });
+            saveToCloud();
+            clearBulkSelection();
+            applySmartSearch();
+            showToast(`Categoria aplicada a ${count} lançamento${count === 1 ? '' : 's'}.`);
+        }
+
+        function deleteBulkSelected() {
+            if(bulkSelectedIndices.size === 0) return;
+            if(!confirm(`Excluir ${bulkSelectedIndices.size} lançamento(s) selecionado(s)? Essa ação não pode ser desfeita.`)) return;
+            const txArray = appDB.transactions[appDB.currentCompanyId] || [];
+            const sortedIndices = Array.from(bulkSelectedIndices).sort((a, b) => b - a);
+            sortedIndices.forEach(idx => {
+                const removed = txArray[idx];
+                if(!removed) return;
+                txArray.splice(idx, 1);
+                logAudit('transaction', 'delete', removed.desc, removed, null);
+            });
+            const count = sortedIndices.length;
+            clearBulkSelection();
+            saveToCloud();
+            applySmartSearch();
+            showToast(`${count} lançamento${count === 1 ? '' : 's'} excluído${count === 1 ? '' : 's'}.`);
         }
 
         function handleOFX() {
