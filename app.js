@@ -1619,14 +1619,16 @@
             if(forecastEmpty) forecastEmpty.style.display = 'none';
             if(forecastCanvas) forecastCanvas.style.display = 'block';
 
-            let totalIn = 0, totalOut = 0, oldestDate = null;
-            currentTx.forEach(t => {
-                if(!t.receipt) return;
-                if(t.type === 'in') totalIn += t.amount; else totalOut += t.amount;
-                const d = parseBRDate(t.date);
-                if(d && (!oldestDate || d < oldestDate)) oldestDate = d;
-            });
+            const confirmedSorted = currentTx
+                .filter(t => t.receipt)
+                .map(t => ({ date: parseBRDate(t.date), amount: t.type === 'in' ? t.amount : -t.amount, isIn: t.type === 'in' }))
+                .filter(t => t.date)
+                .sort((a, b) => a.date - b.date);
+
+            let totalIn = 0, totalOut = 0;
+            confirmedSorted.forEach(t => { if(t.isIn) totalIn += t.amount; else totalOut += -t.amount; });
             const currentCash = totalIn - totalOut;
+            const oldestDate = confirmedSorted.length ? confirmedSorted[0].date : null;
 
             const today = new Date(); today.setHours(0,0,0,0);
             const daysCovered = oldestDate ? Math.max(1, Math.round((today - oldestDate) / 86400000)) : 1;
@@ -1637,19 +1639,47 @@
             const revenueChangePct = parseFloat(document.getElementById('forecast-revenue-change').value) || 0;
             const adjustedDailyIn = dailyAvgIn * (1 + revenueChangePct / 100);
             const adjustedDailyOut = dailyAvgOut + (extraCost / 30);
-            const dailyNet = adjustedDailyIn - adjustedDailyOut;
+            const baseDailyNet = adjustedDailyIn - adjustedDailyOut;
+            const optimisticDailyNet = (adjustedDailyIn * 1.15) - adjustedDailyOut;
+            const pessimisticDailyNet = (adjustedDailyIn * 0.85) - (adjustedDailyOut * 1.10);
 
-            const horizon = parseInt(document.getElementById('forecast-horizon').value, 10) || 30;
-            const steps = 6;
-            let dataPoints = []; let labels = [];
-            for(let i = 0; i <= steps; i++) {
-                const day = Math.round((horizon / steps) * i);
-                dataPoints.push(currentCash + dailyNet * day);
-                labels.push(day === 0 ? 'Hoje' : '+' + day + 'd');
+            const horizonRaw = document.getElementById('forecast-horizon').value;
+            const isWeeklyMode = horizonRaw === '13w';
+            const horizon = isWeeklyMode ? 91 : (parseInt(horizonRaw, 10) || 30);
+            const futureSteps = isWeeklyMode ? 13 : 6;
+
+            // --- histórico real (mesma amostragem em pontos que o futuro, terminando hoje) ---
+            const historySteps = Math.min(6, daysCovered);
+            let histLabels = []; let histValues = [];
+            let cumIdx = 0; let running = 0;
+            for(let i = 0; i <= historySteps; i++) {
+                const dayOffset = Math.round((daysCovered / historySteps) * i);
+                const cutoff = new Date(oldestDate || today); cutoff.setDate(cutoff.getDate() + dayOffset);
+                while(cumIdx < confirmedSorted.length && confirmedSorted[cumIdx].date <= cutoff) { running += confirmedSorted[cumIdx].amount; cumIdx++; }
+                histValues.push(running);
+                histLabels.push(dayOffset === daysCovered ? 'Hoje' : `-${daysCovered - dayOffset}d`);
+            }
+            // garante que o último ponto histórico seja exatamente o caixa atual (arredondamentos de amostragem à parte)
+            histValues[histValues.length - 1] = currentCash;
+
+            let futureLabels = []; let futureBase = []; let futureOpt = []; let futurePess = [];
+            for(let i = 1; i <= futureSteps; i++) {
+                const day = isWeeklyMode ? Math.round((91 / 13) * i) : Math.round((horizon / futureSteps) * i);
+                futureLabels.push(isWeeklyMode ? `Sem ${i}` : '+' + day + 'd');
+                futureBase.push(currentCash + baseDailyNet * day);
+                futureOpt.push(currentCash + optimisticDailyNet * day);
+                futurePess.push(currentCash + pessimisticDailyNet * day);
             }
 
-            const projectedEnd = dataPoints[dataPoints.length - 1];
-            document.getElementById('forecast-30-label').textContent = `saldo projetado (${horizon}d)`;
+            const labels = histLabels.concat(futureLabels);
+            const nullPad = new Array(histLabels.length - 1).fill(null);
+            const historicalSeries = histValues.concat(new Array(futureLabels.length).fill(null));
+            const baseSeries = nullPad.concat([currentCash], futureBase);
+            const optSeries = nullPad.concat([currentCash], futureOpt);
+            const pessSeries = nullPad.concat([currentCash], futurePess);
+
+            const projectedEnd = futureBase[futureBase.length - 1];
+            document.getElementById('forecast-30-label').textContent = isWeeklyMode ? 'saldo projetado (13 sem.)' : `saldo projetado (${horizon}d)`;
             document.getElementById('forecast-30').innerText = `R$ ${projectedEnd.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             document.getElementById('forecast-30').style.color = projectedEnd >= 0 ? 'var(--success)' : 'var(--danger)';
 
@@ -1664,24 +1694,49 @@
 
             const ctx = document.getElementById('forecastChart').getContext('2d');
             if(forecastChartInstance) forecastChartInstance.destroy();
-            const datasets = [{ label: 'Saldo Projetado', data: dataPoints, borderColor: cssVar('--champagne'), backgroundColor: verticalGradient(ctx, '--champagne', 300, 0.35, 0), fill: true, borderDash: [5, 5], tension: 0.4, pointBackgroundColor: cssVar('--champagne'), pointBorderColor: cssVar('--obsidian'), pointRadius: 4, pointHoverRadius: 6 }];
+            const datasets = [
+                { label: 'Histórico', data: historicalSeries, borderColor: cssVar('--text-muted'), backgroundColor: 'transparent', fill: false, tension: 0.3, pointRadius: 2, spanGaps: false },
+                { label: 'Base', data: baseSeries, borderColor: cssVar('--champagne'), backgroundColor: verticalGradient(ctx, '--champagne', 300, 0.30, 0), fill: true, borderDash: [5, 5], tension: 0.3, pointBackgroundColor: cssVar('--champagne'), pointBorderColor: cssVar('--obsidian'), pointRadius: 3, pointHoverRadius: 6, spanGaps: false },
+                { label: 'Otimista', data: optSeries, borderColor: cssVar('--success'), backgroundColor: 'transparent', fill: false, borderDash: [2, 3], tension: 0.3, pointRadius: 0, spanGaps: false },
+                { label: 'Pessimista', data: pessSeries, borderColor: cssVar('--danger'), backgroundColor: 'transparent', fill: false, borderDash: [2, 3], tension: 0.3, pointRadius: 0, spanGaps: false }
+            ];
             if(hasThreshold) {
-                datasets.push({ label: 'Limite Mínimo', data: labels.map(() => threshold), borderColor: cssVar('--danger'), borderDash: [3, 3], pointRadius: 0, fill: false, tension: 0 });
+                datasets.push({ label: 'Limite Mínimo', data: labels.map(() => threshold), borderColor: cssVar('--danger'), borderDash: [3, 3], pointRadius: 0, fill: false, tension: 0, spanGaps: true });
             }
             forecastChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: { labels: labels, datasets: datasets },
-                options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { y: { grid: {color: cssVar('--border')} }, x: { grid: {display: false} } }, plugins: { legend: { display: hasThreshold } } }
+                options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { y: { grid: {color: cssVar('--border')} }, x: { grid: {display: false} } }, plugins: { legend: { display: true, labels: { boxWidth: 12, font: { size: 10 } } } } }
             });
 
             if(warningEl) {
-                if(hasThreshold && dataPoints.some(v => v < threshold)) {
+                if(hasThreshold && futureBase.some(v => v < threshold)) {
                     warningEl.style.display = 'block';
-                    warningEl.textContent = `atenção: a projeção cruza o limite mínimo de R$ ${threshold.toLocaleString('pt-BR', {minimumFractionDigits: 2})} dentro do horizonte de ${horizon} dias.`;
+                    warningEl.textContent = `atenção: o cenário base cruza o limite mínimo de R$ ${threshold.toLocaleString('pt-BR', {minimumFractionDigits: 2})} dentro do horizonte projetado.`;
                 } else {
                     warningEl.style.display = 'none';
                 }
             }
+
+            updateForecastFreshness();
+        }
+
+        function updateForecastFreshness() {
+            const el = document.getElementById('forecast-freshness-note');
+            if(!el) return;
+            if(!appDB.forecastLastViewed) appDB.forecastLastViewed = {};
+            const todayStr = getTodayDate();
+            const lastViewed = appDB.forecastLastViewed[appDB.currentCompanyId];
+            if(lastViewed !== todayStr) {
+                appDB.forecastLastViewed[appDB.currentCompanyId] = todayStr;
+                saveToCloud();
+            }
+            const lastDate = parseBRDate(lastViewed || todayStr);
+            const today = new Date(); today.setHours(0,0,0,0);
+            const daysSince = lastDate ? Math.round((today - lastDate) / 86400000) : 0;
+            if(!lastViewed || daysSince <= 0) el.textContent = 'projeção revisada hoje.';
+            else if(daysSince <= 7) el.textContent = `projeção revisada há ${daysSince} dia${daysSince === 1 ? '' : 's'} — dentro da cadência semanal recomendada.`;
+            else el.innerHTML = `<span style="color: var(--gold);">projeção não é revisada há ${daysSince} dias</span> — atualizações semanais tendem a manter a previsão bem mais precisa.`;
         }
 
         function resetForecastScenario() {

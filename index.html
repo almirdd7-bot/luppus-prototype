@@ -23,7 +23,7 @@
     <title>LUPPUS | find the signal</title>
 
     <!-- CSS carrega primeiro para a tela de login aparecer estilizada o quanto antes -->
-    <link rel="stylesheet" href="style.css?v=20260902-3">
+    <link rel="stylesheet" href="style.css?v=20260902-4">
     <link rel="stylesheet" href="https://bossanova.uk/jspreadsheet/v4/jexcel.css" type="text/css" />
     <link rel="stylesheet" href="https://jsuites.net/v4/jsuites.css" type="text/css" />
 
@@ -465,7 +465,8 @@
                         motor de previsibilidade
                         <button class="outline-btn hide-on-pdf" style="padding: 4px 10px; font-size: 10px;" onclick="exportForecastChart()">baixar gráfico</button>
                     </div>
-                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 20px;">Projeção baseada na média diária real de fluxo de caixa, calculada a partir do histórico de lançamentos.</p>
+                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 6px;">Projeção baseada na média diária real de fluxo de caixa, calculada a partir do histórico de lançamentos. O gráfico mostra o histórico real e três cenários (base, otimista e pessimista) a partir de hoje.</p>
+                    <p id="forecast-freshness-note" class="support-note" style="margin-bottom: 20px;"></p>
                     <div class="kpi-grid">
                         <div class="kpi-card"><div class="kpi-title" id="forecast-30-label">saldo projetado (30d)</div><div class="kpi-value" id="forecast-30">R$ 0,00</div></div>
                         <div class="kpi-card"><div class="kpi-title">risco de caixa</div><div class="kpi-value" id="forecast-risk">Baixo</div></div>
@@ -477,6 +478,7 @@
                                 <option value="30" selected>30 dias</option>
                                 <option value="60">60 dias</option>
                                 <option value="90">90 dias</option>
+                                <option value="13w">13 semanas (curto prazo)</option>
                             </select>
                         </div>
                         <div class="form-group"><label for="forecast-threshold">limite mínimo de saldo (opcional)</label><input type="number" id="forecast-threshold" placeholder="0,00" oninput="updateForecasting()"></div>
@@ -1283,7 +1285,7 @@
         </div>
     </div>
 
-    <script src="app.js?v=20260902-3" defer></script>
+    <script src="app.js?v=20260902-4" defer></script>
 
     <!--Start of Tawk.to Script-->
     <script type="text/javascript">
