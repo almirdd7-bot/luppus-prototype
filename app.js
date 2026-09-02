@@ -105,6 +105,30 @@
         let userRole = 'empresa'; // 'cliente' | 'empresa' | 'dev' — controla quais abas de Configurações aparecem
         let appEntered = false;
 
+        // --- TRILHA DE AUDITORIA ---
+        // Quem fez a ação, agora — usado no log e em qualquer relatório que precise identificar o autor.
+        function getCurrentUserLabel() {
+            try {
+                const authApp = firebase.apps.find(a => a.name === AUTH_APP_NAME);
+                const u = authApp && authApp.auth().currentUser;
+                return (u && u.email) || 'demo';
+            } catch(e) { return 'desconhecido'; }
+        }
+
+        // Registro append-only de criação/edição/exclusão — nunca é reescrito, só recebe novas entradas.
+        // Cada entrada guarda o valor antes/depois para permitir reconstituir o que mudou.
+        function logAudit(entity, action, entityLabel, before, after) {
+            if(!appDB.auditLog) appDB.auditLog = {};
+            if(!appDB.auditLog[appDB.currentCompanyId]) appDB.auditLog[appDB.currentCompanyId] = [];
+            appDB.auditLog[appDB.currentCompanyId].push({
+                ts: new Date().toISOString(),
+                user: getCurrentUserLabel(),
+                entity, action, entityLabel,
+                before: before !== undefined ? before : null,
+                after: after !== undefined ? after : null
+            });
+        }
+
         function showToast(msg) {
             const toast = document.getElementById('toast-msg');
             if(!toast) return;
@@ -943,6 +967,7 @@
         let auditSortColumn = 'date';
         let auditSortDir = 'desc';
         let auditNoAttachmentOnly = false;
+        let auditMaterialityOnly = false;
         let lastAuditFilteredData = [];
 
         const DEFAULT_CATEGORIES = ['Marketing', 'Folha de Pagamento', 'Impostos', 'Infraestrutura', 'Consultoria', 'Vendas', 'Outro'];
@@ -978,6 +1003,7 @@
             if(!appDB.customCategories) appDB.customCategories = {};
             if(!appDB.customCategories[appDB.currentCompanyId]) appDB.customCategories[appDB.currentCompanyId] = [];
             appDB.customCategories[appDB.currentCompanyId].push(name);
+            logAudit('category', 'create', name, null, name);
             saveToCloud();
             input.value = '';
             renderCategoryUI();
@@ -986,7 +1012,9 @@
 
         function removeCategory(index) {
             const custom = appDB.customCategories[appDB.currentCompanyId] || [];
+            const removedName = custom[index];
             custom.splice(index, 1);
+            logAudit('category', 'delete', removedName, removedName, null);
             saveToCloud();
             renderCategoryUI();
             showToast('Categoria removida.');
@@ -1017,6 +1045,10 @@
             const dateFrom = dateFromEl ? parseBRDate(dateFromEl.value) : null;
             const dateTo = dateToEl ? parseBRDate(dateToEl.value) : null;
 
+            const materialityRaw = document.getElementById('audit-materiality') ? document.getElementById('audit-materiality').value : '';
+            const materialityThreshold = materialityRaw === '' ? null : parseFloat(materialityRaw);
+            const hasMateriality = materialityThreshold !== null && !isNaN(materialityThreshold);
+
             const currentTx = appDB.transactions[appDB.currentCompanyId] || [];
             const withIndex = currentTx.map((t, i) => ({ ...t, originalIndex: i }));
 
@@ -1024,6 +1056,7 @@
                 if(!t.desc.toLowerCase().includes(filterDesc)) return false;
                 if(filterType !== 'all' && t.type !== filterType) return false;
                 if(auditNoAttachmentOnly && t.receipt) return false;
+                if(auditMaterialityOnly && hasMateriality && t.amount < materialityThreshold) return false;
                 const td = parseBRDate(t.date);
                 if(dateFrom && td && td < dateFrom) return false;
                 if(dateTo && td && td > dateTo) return false;
@@ -1049,6 +1082,144 @@
             renderData(filteredData);
             renderAuditSummary(filteredData);
             renderAuditSortIndicators();
+            renderVarianceReport();
+            renderOutliers();
+            renderBenfordCheck();
+            renderAgingWorklist();
+        }
+
+        function toggleAuditMaterialityOnly() {
+            auditMaterialityOnly = !auditMaterialityOnly;
+            const chip = document.getElementById('audit-chip-materiality');
+            if(chip) chip.classList.toggle('active', auditMaterialityOnly);
+            runAuditFilter();
+        }
+
+        function renderVarianceReport() {
+            const el = document.getElementById('audit-variance-body');
+            if(!el) return;
+            const currentTx = appDB.transactions[appDB.currentCompanyId] || [];
+            const now = new Date();
+            const thisMonthKey = now.getFullYear() + '-' + now.getMonth();
+            const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const lastMonthKey = lastMonthDate.getFullYear() + '-' + lastMonthDate.getMonth();
+            const sums = {};
+            currentTx.forEach(t => {
+                if(!t.receipt) return;
+                const d = parseBRDate(t.date);
+                if(!d) return;
+                const key = d.getFullYear() + '-' + d.getMonth();
+                if(key !== thisMonthKey && key !== lastMonthKey) return;
+                if(!sums[key]) sums[key] = { in: 0, out: 0 };
+                if(t.type === 'in') sums[key].in += t.amount; else sums[key].out += t.amount;
+            });
+            const cur = sums[thisMonthKey] || { in: 0, out: 0 };
+            const prev = sums[lastMonthKey] || { in: 0, out: 0 };
+            const pctChange = (a, b) => b === 0 ? (a === 0 ? 0 : 100) : ((a - b) / Math.abs(b)) * 100;
+            const rows = [
+                { label: 'receitas', cur: cur.in, prev: prev.in, higherIsBad: false },
+                { label: 'custos', cur: cur.out, prev: prev.out, higherIsBad: true },
+                { label: 'líquido', cur: cur.in - cur.out, prev: prev.in - prev.out, higherIsBad: false }
+            ];
+            el.innerHTML = rows.map(r => {
+                const pct = pctChange(r.cur, r.prev);
+                const isGood = r.higherIsBad ? pct <= 0 : pct >= 0;
+                const pctColor = isGood ? 'var(--success)' : 'var(--danger)';
+                const arrow = pct >= 0 ? '▲' : '▼';
+                return `<div class="variance-row"><span style="text-transform:capitalize;">${r.label}</span><span>R$ ${r.cur.toLocaleString('pt-BR',{minimumFractionDigits:2})} <span style="color:${pctColor}; font-size:10px;">${arrow} ${Math.abs(pct).toFixed(1)}% vs. mês anterior</span></span></div>`;
+            }).join('');
+        }
+
+        function renderOutliers() {
+            const el = document.getElementById('audit-outliers-body');
+            if(!el) return;
+            const currentTx = appDB.transactions[appDB.currentCompanyId] || [];
+            const byCategory = {};
+            currentTx.forEach((t, i) => {
+                if(!t.receipt) return;
+                const cat = t.category || '(sem categoria)';
+                if(!byCategory[cat]) byCategory[cat] = [];
+                byCategory[cat].push({ ...t, originalIndex: i });
+            });
+            let outliers = [];
+            Object.keys(byCategory).forEach(cat => {
+                const items = byCategory[cat];
+                if(items.length < 4) return;
+                const amounts = items.map(t => t.amount);
+                const mean = amounts.reduce((a,b) => a+b, 0) / amounts.length;
+                const variance = amounts.reduce((a,b) => a + Math.pow(b - mean, 2), 0) / amounts.length;
+                const std = Math.sqrt(variance);
+                if(std === 0) return;
+                items.forEach(t => {
+                    const z = (t.amount - mean) / std;
+                    if(Math.abs(z) >= 2.5) outliers.push({ ...t, z });
+                });
+            });
+            outliers.sort((a,b) => Math.abs(b.z) - Math.abs(a.z));
+            if(outliers.length === 0) { el.innerHTML = '<p class="support-note" style="margin:0;">Nenhum lançamento fora do padrão estatístico da própria categoria.</p>'; return; }
+            el.innerHTML = outliers.slice(0, 8).map(t => `<div class="outlier-row"><span>${escapeHtml(t.desc)} <span style="color:var(--text-muted); font-size:10px;">(${escapeHtml(t.category||'sem categoria')}, ${t.date})</span></span><span style="color:var(--danger);">R$ ${t.amount.toLocaleString('pt-BR',{minimumFractionDigits:2})} · ${Math.abs(t.z).toFixed(1)}σ da média</span></div>`).join('');
+        }
+
+        let benfordChartInstance = null;
+        const BENFORD_EXPECTED = [30.1,17.6,12.5,9.7,7.9,6.7,5.8,5.1,4.6];
+
+        function renderBenfordCheck() {
+            const canvas = document.getElementById('benfordChart');
+            const verdictEl = document.getElementById('benford-verdict');
+            if(!canvas) return;
+            const currentTx = appDB.transactions[appDB.currentCompanyId] || [];
+            const amounts = currentTx.filter(t => t.receipt).map(t => t.amount).filter(a => a > 0);
+            if(amounts.length < 30) {
+                if(verdictEl) verdictEl.textContent = `É preciso de pelo menos 30 lançamentos confirmados para essa checagem fazer sentido estatisticamente (hoje: ${amounts.length}).`;
+                if(benfordChartInstance) { benfordChartInstance.destroy(); benfordChartInstance = null; }
+                return;
+            }
+            const counts = new Array(9).fill(0);
+            amounts.forEach(a => {
+                const s = String(Math.abs(a)).replace(/^0+/, '').replace('.', '');
+                const firstDigit = parseInt(s[0], 10);
+                if(firstDigit >= 1 && firstDigit <= 9) counts[firstDigit - 1]++;
+            });
+            const total = counts.reduce((a,b) => a+b, 0);
+            const observed = counts.map(c => (c / total) * 100);
+            const deviation = observed.reduce((sum, obs, i) => sum + Math.abs(obs - BENFORD_EXPECTED[i]), 0) / 9;
+
+            const ctx = canvas.getContext('2d');
+            if(benfordChartInstance) benfordChartInstance.destroy();
+            benfordChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['1','2','3','4','5','6','7','8','9'],
+                    datasets: [
+                        { label: 'Observado', data: observed, backgroundColor: cssVarAlpha('--champagne', 0.6) },
+                        { label: 'Esperado (Benford)', type: 'line', data: BENFORD_EXPECTED, borderColor: cssVar('--text-muted'), borderDash: [4,4], pointRadius: 0, fill: false }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { y: { grid: { color: cssVar('--border') }, ticks: { callback: v => v + '%' } }, x: { grid: { display: false } } } }
+            });
+
+            if(verdictEl) {
+                if(deviation < 3) verdictEl.innerHTML = `Distribuição próxima do esperado (desvio médio ${deviation.toFixed(1)} pontos) — sem sinal de anomalia.`;
+                else if(deviation < 6) verdictEl.innerHTML = `<span style="color:var(--gold);">Desvio moderado (${deviation.toFixed(1)} pontos)</span> — vale uma olhada, mas pode ser só o perfil natural dos seus lançamentos.`;
+                else verdictEl.innerHTML = `<span style="color:var(--danger);">Desvio alto (${deviation.toFixed(1)} pontos)</span> — a distribuição foge bastante do padrão esperado, considere revisar os valores lançados manualmente.`;
+            }
+        }
+
+        function renderAgingWorklist() {
+            const el = document.getElementById('audit-aging-body');
+            if(!el) return;
+            const currentTx = appDB.transactions[appDB.currentCompanyId] || [];
+            const today = new Date(); today.setHours(0,0,0,0);
+            const pending = currentTx
+                .map((t, i) => ({ ...t, originalIndex: i }))
+                .filter(t => !t.receipt)
+                .map(t => { const d = parseBRDate(t.date); const days = d ? Math.max(0, Math.round((today - d) / 86400000)) : 0; return { ...t, days }; })
+                .sort((a, b) => b.days - a.days);
+            if(pending.length === 0) { el.innerHTML = '<p class="support-note" style="margin:0;">Nenhuma pendência sem comprovante.</p>'; return; }
+            el.innerHTML = pending.slice(0, 10).map(t => {
+                const color = t.days > 30 ? 'var(--danger)' : (t.days > 7 ? 'var(--gold)' : 'var(--text-muted)');
+                return `<div class="aging-row"><span>${escapeHtml(t.desc)} <span style="color:var(--text-muted); font-size:10px;">(${t.date})</span></span><span style="color:${color};">${t.days} dia${t.days===1?'':'s'} pendente</span></div>`;
+            }).join('');
         }
 
         function renderAuditSummary(data) {
@@ -1109,11 +1280,19 @@
             runAuditFilter();
         }
 
-        function exportAuditCSV() {
+        async function sha256Hex(str) {
+            const data = new TextEncoder().encode(str);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function exportAuditCSV() {
             if(!lastAuditFilteredData || lastAuditFilteredData.length === 0) { showToast("Nada para exportar."); return; }
             const header = ['Data', 'Descrição', 'Natureza', 'Valor'];
             const rows = lastAuditFilteredData.map(t => [t.date, t.desc.replace(/;/g, ','), t.type === 'in' ? 'Receita' : 'Custo', t.amount.toFixed(2).replace('.', ',')]);
-            const csv = [header, ...rows].map(r => r.join(';')).join('\r\n');
+            const csvBody = [header, ...rows].map(r => r.join(';')).join('\r\n');
+            const hash = await sha256Hex(csvBody);
+            const csv = csvBody + '\r\n\r\n;;;\r\nSHA-256 deste conteúdo (para conferência de integridade);' + hash;
             const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -1121,6 +1300,8 @@
             link.download = `luppus_auditoria_${Date.now()}.csv`;
             link.click();
             URL.revokeObjectURL(url);
+            const noteEl = document.getElementById('audit-checksum-note');
+            if(noteEl) { noteEl.style.display = 'block'; noteEl.textContent = `Checksum SHA-256 deste export (também incluído no rodapé do CSV): ${hash}`; }
         }
 
         // --- RENDER TABLE & CHART ---
@@ -1592,7 +1773,13 @@
         }
 
         function deleteVault(index) {
-            if(confirm("Excluir documento do cofre?")) { appDB.vault[appDB.currentCompanyId].splice(index, 1); saveToCloud(); renderVault(); }
+            if(confirm("Excluir documento do cofre?")) {
+                const removed = appDB.vault[appDB.currentCompanyId][index];
+                appDB.vault[appDB.currentCompanyId].splice(index, 1);
+                logAudit('vault', 'delete', removed ? removed.name : '(desconhecido)', removed ? removed.name : null, null);
+                saveToCloud();
+                renderVault();
+            }
         }
 
         // --- TRANSACTIONS & OFX ---
@@ -1656,10 +1843,14 @@
 
                 if(wasEditing) {
                     const existing = txArray[editingTransactionIndex];
-                    txArray[editingTransactionIndex] = { date: dateVal, desc, type, amount, category, recurring: existing.recurring, receipt: receiptObj || existing.receipt };
+                    const updated = { date: dateVal, desc, type, amount, category, recurring: existing.recurring, receipt: receiptObj || existing.receipt };
+                    txArray[editingTransactionIndex] = updated;
+                    logAudit('transaction', 'edit', desc, existing, updated);
                     showToast(receiptObj || existing.receipt ? "Lançamento atualizado." : "Lançamento atualizado — ainda pendente.");
                 } else {
-                    txArray.push({ date: dateVal, desc, type, amount, category, recurring: recurring || false, receipt: receiptObj || null });
+                    const created = { date: dateVal, desc, type, amount, category, recurring: recurring || false, receipt: receiptObj || null };
+                    txArray.push(created);
+                    logAudit('transaction', 'create', desc, null, created);
                     showToast(receiptObj ? "Lançamento registrado." : "Lançamento registrado como pendente — anexe o comprovante depois.");
                     if(recurring) generateRecurringOccurrences(dateVal, desc, type, amount, category);
                 }
@@ -1724,7 +1915,13 @@
         }
 
         function deleteTransaction(index) {
-            if(confirm("Excluir lançamento?")) { appDB.transactions[appDB.currentCompanyId].splice(index, 1); saveToCloud(); applySmartSearch(); }
+            if(confirm("Excluir lançamento?")) {
+                const removed = appDB.transactions[appDB.currentCompanyId][index];
+                appDB.transactions[appDB.currentCompanyId].splice(index, 1);
+                logAudit('transaction', 'delete', removed ? removed.desc : '(desconhecido)', removed, null);
+                saveToCloud();
+                applySmartSearch();
+            }
         }
 
         function handleOFX() {
