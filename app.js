@@ -1020,15 +1020,29 @@
             const chip = document.getElementById('support-status-chip');
             const note = document.getElementById('support-status-note');
             if(!chip) return;
-            if(cloudDB) {
-                chip.textContent = '● operacional';
-                chip.className = 'chip chip-success';
-                if(note) note.textContent = 'Conectado normalmente. Se algo parecer travado mesmo assim, tente recarregar a página antes de reportar.';
-            } else {
+            if(!cloudDB) {
                 chip.textContent = '● modo demonstração';
                 chip.className = 'chip';
                 if(note) note.textContent = 'Você está no modo de demonstração — sem conexão real com o banco de dados. Isso é esperado, não é uma falha.';
+                return;
             }
+
+            chip.textContent = '● verificando...';
+            chip.className = 'chip';
+            // Leitura leve num documento compartilhado só pra confirmar que a conexão está respondendo
+            // agora — checar se cloudDB existe não bastava, porque isso só diz "já conectou alguma vez".
+            const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000));
+            Promise.race([cloudDB.collection('luppus_system').doc('market_data').get(), timeout])
+                .then(() => {
+                    chip.textContent = '● operacional';
+                    chip.className = 'chip chip-success';
+                    if(note) note.textContent = 'Conexão com o banco de dados confirmada agora mesmo. Se algo parecer travado mesmo assim, tente recarregar a página antes de reportar.';
+                })
+                .catch(() => {
+                    chip.textContent = '● instabilidade detectada';
+                    chip.className = 'chip chip-danger';
+                    if(note) note.textContent = 'Não conseguimos confirmar a conexão com o banco de dados agora — pode ser uma instabilidade passageira. Tente recarregar a página; se persistir, é um bom momento para relatar o problema abaixo.';
+                });
         }
 
         function submitSupportTicket() {
@@ -1566,7 +1580,7 @@
                 }
 
                 let attachmentHtml = '<span style="color: var(--text-muted);">-</span>';
-                if (t.receipt) { attachmentHtml = `<a href="${t.receipt.data}" download="${t.receipt.name}" class="attachment-link">doc</a>`; }
+                if (t.receipt) { attachmentHtml = `<a href="${t.receipt.data}" download="${escapeHtml(t.receipt.name)}" class="attachment-link">doc</a>`; }
 
                 const categoryChip = t.category ? ` <span class="chip" style="padding: 2px 8px; font-size: 9px; vertical-align: middle;">${escapeHtml(t.category)}</span>` : '';
                 const pendingChip = isPending ? ` <span class="chip chip-danger" style="padding: 2px 8px; font-size: 9px; vertical-align: middle;">pendente</span>` : '';
@@ -2308,7 +2322,7 @@
                     </div>
                     <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
                         <button class="icon-btn" onclick="openVaultPreview(${i})" aria-label="visualizar documento"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
-                        <a href="${d.file.data}" download="${d.file.fname}" class="attachment-link" onclick="logVaultAccess('${escapeHtml(d.name)}', 'download'); saveToCloud(); renderVaultAccessLog();">Download</a>
+                        <a href="${d.file.data}" download="${escapeHtml(d.file.fname)}" class="attachment-link" onclick="logVaultAccess('${escapeHtml(d.name)}', 'download'); saveToCloud(); renderVaultAccessLog();">Download</a>
                         ${deleteBtnHtml}
                     </div>
                 `;

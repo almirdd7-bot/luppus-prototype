@@ -350,7 +350,7 @@
         button.outline-btn { padding: 14px 24px; background-color: transparent; color: var(--gold); border: 1px solid var(--gold); border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 12px; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.4px;}
         button.outline-btn:hover { background-color: rgba(212, 175, 55, 0.1); }
         button.danger-btn { padding: 14px 24px; background-color: transparent; color: var(--danger); border: 1px solid var(--danger); border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px;}
-        button.danger-btn:hover { background-color: rgba(255, 77, 77, 0.1); }
+        button.danger-btn:hover { background-color: rgba(240, 108, 108, 0.1); }
 
         /* TABLE */
         .table-container { max-height: 500px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg);}
