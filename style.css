@@ -78,8 +78,8 @@
         .login-box h1 { color: var(--champagne); letter-spacing: 5px; margin-bottom: 8px; font-size: 26px; font-weight: 600; font-family: 'Playfair Display', serif; text-transform: uppercase; }
         .login-box p { color: var(--text-muted); font-size: 11px; font-style: italic; letter-spacing: 2px; margin-bottom: 38px; }
 
-        .login-box input[type="text"], .login-box input[type="password"] { width: 100%; padding: 14px 4px; background-color: transparent; border: none; border-bottom: 1px solid var(--border); color: var(--ivory); border-radius: 0; text-align: center; font-size: 13px; margin-bottom: 18px; letter-spacing: 1px; font-family: 'Inter', sans-serif; transition: border-color 0.3s; }
-        .login-box input[type="text"]::placeholder, .login-box input[type="password"]::placeholder { color: var(--text-muted); }
+        .login-box input[type="text"], .login-box input[type="password"], .login-box input[type="email"] { width: 100%; padding: 14px 4px; background-color: transparent; border: none; border-bottom: 1px solid var(--border); color: var(--ivory); border-radius: 0; text-align: center; font-size: 13px; margin-bottom: 18px; letter-spacing: 1px; font-family: 'Inter', sans-serif; transition: border-color 0.3s; }
+        .login-box input[type="text"]::placeholder, .login-box input[type="password"]::placeholder, .login-box input[type="email"]::placeholder { color: var(--text-muted); }
         .login-box input:focus { outline: none; border-bottom-color: var(--champagne); }
 
         .login-box button { width: 100%; padding: 15px; background-color: var(--champagne); color: var(--obsidian); border: none; border-radius: 2px; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-size: 11px; transition: 0.3s; margin-top: 8px; font-family: 'Inter', sans-serif; }
@@ -203,7 +203,7 @@
         /* VIEWS */
         .view-section { display: none; animation: fadeIn 0.3s ease-in-out; }
         .view-section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 1; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
         /* DASHBOARD CARDS */
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
@@ -251,13 +251,13 @@
         .settings-row-label { font-size: 13px; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.4px; }
         .settings-row-label small { display: block; font-size: 11px; color: var(--text-muted); margin-top: 3px; font-weight: 400; text-transform: none; letter-spacing: normal; }
         .settings-row-control { flex-shrink: 0; }
-        .settings-row-control input[type="text"], .settings-row-control input[type="number"], .settings-row-control select { width: 240px; margin-bottom: 0; }
+        .settings-row-control input[type="text"], .settings-row-control input[type="number"], .settings-row-control input[type="email"], .settings-row-control input[type="tel"], .settings-row-control select { width: 240px; margin-bottom: 0; }
         .settings-row-control-double { display: flex; gap: 10px; }
         .settings-row-control-double select { width: 165px; }
         @media (max-width: 600px) {
             .settings-row { flex-direction: column; align-items: flex-start; gap: 10px; }
             .settings-row-control { width: 100%; }
-            .settings-row-control input[type="text"], .settings-row-control input[type="number"], .settings-row-control select { width: 100%; }
+            .settings-row-control input[type="text"], .settings-row-control input[type="number"], .settings-row-control input[type="email"], .settings-row-control input[type="tel"], .settings-row-control select { width: 100%; }
             .settings-row-control-double { width: 100%; flex-direction: column; }
             .settings-row-control-double select { width: 100%; }
         }
@@ -338,7 +338,7 @@
         .form-group { margin-bottom: 20px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         label { display: block; margin-bottom: 8px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
-        input[type="text"], input[type="number"], select, textarea { width: 100%; padding: 14px; background-color: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); border-radius: var(--radius-sm); font-family: 'Inter', sans-serif; font-size: 13px; transition: 0.3s; resize: vertical; }
+        input[type="text"], input[type="number"], input[type="email"], input[type="tel"], select, textarea { width: 100%; padding: 14px; background-color: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); border-radius: var(--radius-sm); font-family: 'Inter', sans-serif; font-size: 13px; transition: 0.3s; resize: vertical; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: var(--gold); }
         input:disabled, select:disabled, button:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
         
