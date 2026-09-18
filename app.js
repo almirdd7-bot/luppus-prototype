@@ -948,7 +948,6 @@
         }
 
         const MAILER_URL = 'https://luppus-mailer.luppus.workers.dev';
-        const MAILER_APP_SECRET = 'ef98de4a84dd53f625dcef630ad9553f1e2bfa420335ffeb';
 
         function sendTestReport() {
             const emailInput = document.getElementById('contact-email-input');
@@ -960,17 +959,23 @@
             const custos = document.getElementById('total-out') ? document.getElementById('total-out').textContent : 'R$ 0,00';
             const resultado = document.getElementById('net-cash') ? document.getElementById('net-cash').textContent : 'R$ 0,00';
 
+            // O worker não usa mais uma senha fixa (X-App-Secret) — ele verifica o próprio
+            // token de login do Firebase, então não existe segredo nenhum pra carregar aqui.
+            const authApp = getAuthApp();
+            const user = authApp && authApp.auth().currentUser;
+            if(!user) { showToast('Sessão expirada. Faça login novamente.'); return; }
+
             showToast('Enviando relatório de teste...');
-            fetch(MAILER_URL, {
+            user.getIdToken().then(idToken => fetch(MAILER_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-App-Secret': MAILER_APP_SECRET },
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
                 body: JSON.stringify({
                     to,
                     type: 'weekly_report',
                     companyName: company ? company.name : '',
                     data: { receita, custos, resultado }
                 })
-            })
+            }))
             .then(res => res.json().then(data => ({ ok: res.ok, data })))
             .then(({ ok, data }) => {
                 if(ok) {
