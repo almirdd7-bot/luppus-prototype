@@ -245,20 +245,15 @@
                 .catch(() => {});
         }
 
-        // Índices de bolsa: atualizados no máx. 2x/dia (madrugada/fim de tarde), compartilhado
-        // entre todos os usuários via Firestore, para não estourar o limite de 25 consultas/dia da Alpha Vantage.
-        const ALPHA_VANTAGE_KEY = '7B0BMN54GWJ6WE5R';
+        // Índices de bolsa: atualizados 2x/dia por um GitHub Action
+        // (.github/workflows/update-market-indices.yml), que escreve direto no Firestore
+        // usando a chave da Alpha Vantage guardada como GitHub Secret — ela não fica mais
+        // no cliente. O navegador só lê o último valor salvo em luppus_system/market_data.
         const MARKET_INDICES = [
             { symbol: 'QQQ', label: 'NASDAQ', changeId: 'quote-nasdaq-change' },
             { symbol: 'EWG', label: 'DAX (Frankfurt)', changeId: 'quote-dax-change' },
             { symbol: 'EWU', label: 'FTSE 100', changeId: 'quote-ftse-change' }
         ];
-
-        function getMarketSlotKey() {
-            const shifted = new Date(Date.now() - 6 * 60 * 60 * 1000);
-            const slot = shifted.getHours() < 12 ? 'AM' : 'PM';
-            return `${shifted.getFullYear()}-${shifted.getMonth()}-${shifted.getDate()}-${slot}`;
-        }
 
         function renderMarketIndices(indices) {
             MARKET_INDICES.forEach(m => {
@@ -272,39 +267,18 @@
             });
         }
 
-        function refreshMarketIndices(marketRef, slotKey) {
-            Promise.all(MARKET_INDICES.map(m =>
-                fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${m.symbol}&apikey=${ALPHA_VANTAGE_KEY}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        const q = data['Global Quote'];
-                        if(!q || !q['10. change percent']) return null;
-                        return { label: m.label, pct: parseFloat(q['10. change percent']) };
-                    })
-                    .catch(() => null)
-            )).then(results => {
-                const indices = {};
-                results.forEach(r => { if(r) indices[r.label] = r.pct; });
-                if(Object.keys(indices).length > 0) {
-                    marketRef.set({ slot: slotKey, indices }).catch(() => {});
-                    renderMarketIndices(indices);
-                }
-            });
-        }
-
         function fetchMarketIndices() {
             const marketRef = getAuthApp().firestore().collection('luppus_system').doc('market_data');
-            const slotKey = getMarketSlotKey();
             // onSnapshot (em vez de .get()) porque tolera melhor a conexão ainda "esquentando"
             // logo após o login, evitando o erro transitório "client is offline" de uma leitura única.
+            // Não há mais fallback de busca direta na Alpha Vantage aqui: o navegador só lê
+            // o último valor que o GitHub Action gravou (roda 2x/dia). Se o slot estiver
+            // desatualizado, mostramos o valor anterior mesmo assim até a próxima rodada do Action.
             const unsubscribe = marketRef.onSnapshot((doc) => {
                 unsubscribe();
                 const data = doc.exists ? doc.data() : null;
-                if(data && data.slot === slotKey && data.indices) {
+                if(data && data.indices) {
                     renderMarketIndices(data.indices);
-                } else {
-                    if(data && data.indices) renderMarketIndices(data.indices);
-                    refreshMarketIndices(marketRef, slotKey);
                 }
             }, () => {});
         }
