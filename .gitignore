@@ -1,3 +1,10 @@
 LUPPUS_Relatorio_Evolucao_Visual.pdf
 .DS_Store
 Thumbs.db
+
+# Chaves e credenciais - nunca devem ir pro repositório (é público)
+*firebase-adminsdk*.json
+*serviceAccountKey*.json
+.env
+.env.*
+secrets/
